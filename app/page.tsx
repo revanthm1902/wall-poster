@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { addMonths, subMonths, format } from 'date-fns';
+import CalendarGrid from '@/components/CalendarGrid';
 
 export default function WallCalendar() {
   // --- STATE ---
@@ -66,10 +67,10 @@ export default function WallCalendar() {
              </div>
 
              {/* The Grid Area*/}
-             <div className="flex-1 border-2 border-dashed border-zinc-300 rounded-xl flex items-center justify-center bg-zinc-50">
-                <p className="text-zinc-400 font-medium animate-pulse">Grid Engine Loading...</p>
-             </div>
-
+             <div className="flex-1">
+              <CalendarGrid currentDate={currentDate} />
+            </div>
+            
           </div>
         </div>
       </div>
