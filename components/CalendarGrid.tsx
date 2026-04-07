@@ -101,7 +101,7 @@ export default function CalendarGrid({ currentDate }: CalendarGridProps) {
     if (!isCurrentMonth) classes += "text-zinc-300 ";
     else classes += "text-zinc-700 hover:bg-zinc-100 ";
 
-    if (isToday(day) && !isSelectedStart && !isSelectedEnd) classes += "border-b-4 border-amber-400 ";
+    if (isToday(day) && !isSelectedStart && !isSelectedEnd) classes += "border-2 border-current rounded-full opacity-80 ";
 
     if (isSelectedStart) classes += "bg-zinc-900 text-white rounded-l-lg shadow-md scale-105 z-20 ";
     if (isSelectedEnd) classes += "bg-zinc-900 text-white rounded-r-lg shadow-md scale-105 z-20 ";
