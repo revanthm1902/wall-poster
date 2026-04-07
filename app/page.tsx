@@ -7,6 +7,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { toPng } from 'html-to-image';
 import CalendarGrid from '@/components/CalendarGrid';
 import PosterStudio from '@/components/PosterStudio'; 
+import { audio } from '@/utils/audio';
 
 const monthImages = [
   "https://images.unsplash.com/photo-1445543949571-ffc3e0e2f55e", "https://images.unsplash.com/photo-1433162653888-a571f51cb86a",
@@ -37,8 +38,8 @@ export default function WallCalendar() {
   const posterRef = useRef<HTMLDivElement>(null);
 
   // --- PHASE 2: KEYBOARD TELEMETRY ---
-  const nextMonth = () => { setDirection(1); setCurrentDate(prev => addMonths(prev, 1)); };
-  const prevMonth = () => { setDirection(-1); setCurrentDate(prev => subMonths(prev, 1)); };
+  const nextMonth = () => { audio.playPaperFlip(); setDirection(1); setCurrentDate(prev => addMonths(prev, 1)); };
+  const prevMonth = () => { audio.playPaperFlip(); setDirection(-1); setCurrentDate(prev => subMonths(prev, 1)); };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,6 +69,7 @@ export default function WallCalendar() {
   };
 
   const exportPoster = async () => {
+    audio.playShutter();
     if (!posterRef.current) return;
     setIsExporting(true);
     mouseX.set(0); mouseY.set(0);
@@ -105,7 +107,10 @@ export default function WallCalendar() {
       
       {/* Settings Toggle Button */}
       <motion.button
-        whileHover={{ scale: 1.05, rotate: 90 }} whileTap={{ scale: 0.95 }} onClick={() => setIsSettingsOpen(true)}
+        whileHover={{ scale: 1.05, rotate: 90 }} whileTap={{ scale: 0.95 }} onClick={() => {
+          audio.playClick();
+          setIsSettingsOpen(true);
+        }}
         className="absolute top-6 left-6 z-40 p-3 bg-white/10 backdrop-blur-md shadow-lg rounded-full text-white border border-white/20 hover:bg-white/20 transition-colors"
       >
         <Settings2 className="w-6 h-6" />
