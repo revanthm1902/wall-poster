@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, 
   eachDayOfInterval, format, isSameMonth, isSameDay, 
-  isWithinInterval, isAfter, isBefore, isToday, differenceInDays 
+  isAfter, isBefore, isToday, differenceInDays 
 } from 'date-fns';
 import confetti from 'canvas-confetti';
 import { Pin, Trash2 } from 'lucide-react';
@@ -10,6 +10,22 @@ import { Pin, Trash2 } from 'lucide-react';
 interface CalendarGridProps {
   currentDate: Date;
 }
+
+const triggerConfetti = () => {
+  const duration = 2000;
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 50 };
+
+  const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+  const interval: ReturnType<typeof setInterval> = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+    if (timeLeft <= 0) return clearInterval(interval);
+    const particleCount = 50 * (timeLeft / duration);
+    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+  }, 250);
+};
 
 export default function CalendarGrid({ currentDate }: CalendarGridProps) {
   // --- STATE ---
@@ -24,7 +40,7 @@ export default function CalendarGrid({ currentDate }: CalendarGridProps) {
   useEffect(() => {
     const savedNotes = localStorage.getItem('calendar-beast-notes');
     if (savedNotes) {
-      setNotes(JSON.parse(savedNotes));
+      setTimeout(() => setNotes(JSON.parse(savedNotes)), 0);
     }
   }, []);
 
@@ -71,22 +87,6 @@ export default function CalendarGrid({ currentDate }: CalendarGridProps) {
     if (differenceInDays(day, startDate) >= 5) {
       triggerConfetti();
     }
-  };
-
-  const triggerConfetti = () => {
-    const duration = 2000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 50 };
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval: ReturnType<typeof setInterval> = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-      if (timeLeft <= 0) return clearInterval(interval);
-      const particleCount = 50 * (timeLeft / duration);
-      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-    }, 250);
   };
 
   const getDayClasses = (day: Date) => {
@@ -155,8 +155,8 @@ export default function CalendarGrid({ currentDate }: CalendarGridProps) {
             <div className="flex flex-col">
               <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Trip Duration</span>
                 <span className="text-sm font-semibold text-zinc-800">
-                    {format(startDate, 'MMM d')} - {format(endDate, 'MMM d')} 
-                    ({differenceInDays(endDate, startDate) + 1} days)
+                    {format(startDate!, 'MMM d')} - {format(endDate!, 'MMM d')} 
+                    ({differenceInDays(endDate!, startDate!) + 1} days)
                 </span>
             </div>
             <button onClick={() => { setStartDate(null); setEndDate(null); }} className="text-xs font-bold text-red-500 hover:text-red-700 px-3 py-1 rounded-md hover:bg-red-50 transition-colors">
@@ -173,7 +173,7 @@ export default function CalendarGrid({ currentDate }: CalendarGridProps) {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder={`Add a note for ${format(startDate, 'MMM d')}...`}
+                placeholder={`Add a note for ${format(startDate!, 'MMM d')}...`}
                 value={activeNoteText}
                 onChange={(e) => setActiveNoteText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && saveNote(activeDateKey)}
