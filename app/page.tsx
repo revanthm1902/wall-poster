@@ -24,12 +24,10 @@ export default function WallCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [direction, setDirection] = useState(1); 
   
-  // UI States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isTimeWarpOpen, setIsTimeWarpOpen] = useState(false); // NEW: Time-Warp State
+  const [isTimeWarpOpen, setIsTimeWarpOpen] = useState(false); 
   const [isExporting, setIsExporting] = useState(false);
   
-  // Studio States
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [fontStyle, setFontStyle] = useState<'font-sans' | 'font-serif' | 'font-mono'>('font-sans');
   const [theme, setTheme] = useState<'zinc' | 'sepia' | 'midnight'>('zinc');
@@ -37,13 +35,13 @@ export default function WallCalendar() {
 
   const posterRef = useRef<HTMLDivElement>(null);
 
-  // --- PHASE 2: KEYBOARD TELEMETRY ---
+  // Audio-linked Navigation
   const nextMonth = () => { audio.playPaperFlip(); setDirection(1); setCurrentDate(prev => addMonths(prev, 1)); };
   const prevMonth = () => { audio.playPaperFlip(); setDirection(-1); setCurrentDate(prev => subMonths(prev, 1)); };
 
+  // Keyboard Telemetry
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input (like a sticky note)
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'ArrowRight') nextMonth();
       if (e.key === 'ArrowLeft') prevMonth();
@@ -52,15 +50,13 @@ export default function WallCalendar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Spatial Physics Engine
+  // Spatial Physics
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 150, damping: 20 });
   const springY = useSpring(mouseY, { stiffness: 150, damping: 20 });
   const rotateX = useTransform(springY, [-0.5, 0.5], ["3deg", "-3deg"]);
   const rotateY = useTransform(springX, [-0.5, 0.5], ["-3deg", "3deg"]);
-  const glareX = useTransform(springX, [-0.5, 0.5], ["0%", "100%"]);
-  const glareY = useTransform(springY, [-0.5, 0.5], ["0%", "100%"]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -69,9 +65,9 @@ export default function WallCalendar() {
   };
 
   const exportPoster = async () => {
-    audio.playShutter();
     if (!posterRef.current) return;
     setIsExporting(true);
+    audio.playShutter();
     mouseX.set(0); mouseY.set(0);
     
     setTimeout(async () => {
@@ -96,22 +92,21 @@ export default function WallCalendar() {
   const heroImage = customImage || `${monthImages[currentMonthIndex]}?auto=format&fit=crop&w=1000&q=80`;
 
   const themeStyles = {
-    zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]', glow: 'bg-zinc-400' },
-    sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]', glow: 'bg-amber-600' },
-    midnight: { bg: 'bg-slate-900', text: 'text-slate-100', fill: 'text-slate-900', glow: 'bg-blue-600' }
+    zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]' },
+    sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]' },
+    midnight: { bg: 'bg-slate-900', text: 'text-slate-100', fill: 'text-slate-900' }
   };
   const activeTheme = themeStyles[theme];
 
   return (
-    <main className="w-screen h-screen overflow-hidden bg-zinc-900 flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
+    // REVERTED: Light zinc background
+    <main className="w-screen h-screen overflow-hidden bg-zinc-200 flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
       
-      {/* Settings Toggle Button */}
+      {/* REVERTED: White Glassmorphism Settings Button */}
       <motion.button
-        whileHover={{ scale: 1.05, rotate: 90 }} whileTap={{ scale: 0.95 }} onClick={() => {
-          audio.playClick();
-          setIsSettingsOpen(true);
-        }}
-        className="absolute top-6 left-6 z-40 p-3 bg-white/10 backdrop-blur-md shadow-lg rounded-full text-white border border-white/20 hover:bg-white/20 transition-colors"
+        whileHover={{ scale: 1.05, rotate: 90 }} whileTap={{ scale: 0.95 }} 
+        onClick={() => { audio.playClick(); setIsSettingsOpen(true); }}
+        className="absolute top-6 left-6 z-40 p-3 bg-white/80 backdrop-blur-md shadow-lg rounded-full text-zinc-800 border border-white/40 hover:bg-white transition-colors"
       >
         <Settings2 className="w-6 h-6" />
       </motion.button>
@@ -125,34 +120,19 @@ export default function WallCalendar() {
         isExporting={isExporting} onExport={exportPoster}
       />
 
-      {/* --- THE 3D SPATIAL WRAPPER --- */}
+      {/* 3D Spatial Wrapper */}
       <motion.div
         onMouseMove={handleMouseMove} onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
         className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
       >
-        {/* Ambient Glow Backdrop */}
-        <div className={`absolute inset-0 z-0 scale-110 opacity-30 pointer-events-none blur-[120px] transition-colors duration-1000 ${activeTheme.glow}`} />
-
-        {/* The Gallery Bulldog Clip */}
-        <div className="absolute top-[-24px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center pointer-events-none drop-shadow-2xl translate-translate-z-10">
-          <div className="flex gap-16 mb-[-12px] z-0">
-             <div className="w-8 h-12 border-[3.5px] border-zinc-300 rounded-t-full rounded-b-sm rotate-[-15deg] shadow-sm bg-transparent" />
-             <div className="w-8 h-12 border-[3.5px] border-zinc-300 rounded-t-full rounded-b-sm rotate-[15deg] shadow-sm bg-transparent" />
-          </div>
-          <div className="relative w-36 h-10 bg-gradient-to-b from-zinc-300 via-zinc-200 to-zinc-500 rounded-t-lg shadow-[0_10px_20px_rgba(0,0,0,0.4)] border-t border-white flex justify-center items-center z-10">
-             <div className="w-24 h-1.5 bg-zinc-400/40 rounded-full shadow-inner" />
-          </div>
-          <div className="w-44 h-3 bg-gradient-to-b from-zinc-800 to-zinc-950 rounded-sm shadow-[0_8px_12px_rgba(0,0,0,0.5)] z-20 border-t border-zinc-600" />
-        </div>
-
-        {/* --- THE EXPORTABLE POSTER --- */}
+        {/* THE EXPORTABLE POSTER (Clean edges, no clip!) */}
         <div 
           ref={posterRef} 
-          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6), 0 25px 30px -15px rgba(0,0,0,0.4)" }}
+          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.4)" }}
           className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle} bg-white`}
         >
-          {/* Hero Image */}
+          {/* --- HERO IMAGE (Glossy, No Texture, HD) --- */}
           <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-10 flex-shrink-0">
              <AnimatePresence mode="popLayout">
                <motion.img 
@@ -161,56 +141,42 @@ export default function WallCalendar() {
                />
              </AnimatePresence>
              
-             {/* THE TIME-WARP TRIGGER (Clickable Text) */}
-             <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/80 via-black/20 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
+             {/* Text Gradient Overlay (Just enough to read the white text) */}
+             <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
                 <motion.div 
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  onClick={() => setIsTimeWarpOpen(true)}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { audio.playClick(); setIsTimeWarpOpen(true); }}
                   className="pointer-events-auto cursor-pointer inline-block group/warp"
-                  title="Click to jump to a specific date"
                 >
-                  <h1 className="text-white text-6xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-2xl group-hover/warp:text-amber-200 transition-colors">
+                  <h1 className="text-white text-6xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-xl group-hover/warp:text-amber-200 transition-colors">
                     {format(currentDate, 'MMM')}
                   </h1>
                   <div className="flex items-center gap-3">
                     <p className="text-white/90 text-2xl xl:text-3xl font-bold tracking-widest uppercase mt-2 group-hover/warp:text-amber-200/80 transition-colors">
                       {format(currentDate, 'yyyy')}
                     </p>
-                    <Settings2 className="w-5 h-5 text-white/0 group-hover/warp:text-amber-200/50 mt-2 transition-all" />
                   </div>
                 </motion.div>
              </div>
 
-             {/* TIME-WARP OVERLAY */}
+             {/* Time Warp Overlay */}
              <AnimatePresence>
                {isTimeWarpOpen && (
                  <motion.div 
                    initial={{ opacity: 0, backdropFilter: "blur(0px)" }} animate={{ opacity: 1, backdropFilter: "blur(16px)" }} exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
                    className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center p-8 pointer-events-auto"
                  >
-                   <button onClick={() => setIsTimeWarpOpen(false)} className="absolute top-6 right-6 p-2 text-white/50 hover:text-white bg-black/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-                   
-                   {/* Year Scroller */}
+                   <button onClick={() => { audio.playClick(); setIsTimeWarpOpen(false); }} className="absolute top-6 right-6 p-2 text-white/50 hover:text-white bg-black/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                    <div className="flex items-center gap-4 mb-8">
-                     <button onClick={() => setCurrentDate(setYear(currentDate, currentYear - 1))} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronLeft /></button>
+                     <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear - 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronLeft /></button>
                      <span className="text-4xl font-bold text-white tracking-widest">{currentYear}</span>
-                     <button onClick={() => setCurrentDate(setYear(currentDate, currentYear + 1))} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronRight /></button>
+                     <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear + 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronRight /></button>
                    </div>
-
-                   {/* Month Grid */}
                    <div className="grid grid-cols-3 gap-3 w-full max-w-[300px]">
                      {MONTH_NAMES.map((m, idx) => (
                        <button
                          key={m}
-                         onClick={() => {
-                           setCurrentDate(setMonth(currentDate, idx));
-                           setIsTimeWarpOpen(false);
-                         }}
-                         className={`py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all ${
-                           currentMonthIndex === idx 
-                             ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' 
-                             : 'bg-white/10 text-white hover:bg-white/20'
-                         }`}
+                         onClick={() => { audio.playPaperFlip(); setCurrentDate(setMonth(currentDate, idx)); setIsTimeWarpOpen(false); }}
+                         className={`py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all ${currentMonthIndex === idx ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}
                        >
                          {m}
                        </button>
@@ -220,15 +186,22 @@ export default function WallCalendar() {
                )}
              </AnimatePresence>
 
-             {/* Wave Separators */}
+             {/* Wave Separator */}
              <div className="absolute bottom-0 left-0 w-full h-[60px] xl:w-[60px] xl:h-full xl:bottom-auto xl:right-0 xl:left-auto z-20 pointer-events-none">
                <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={`w-full h-full block xl:hidden translate-y-[1px] fill-current ${activeTheme.fill}`}><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C73.69,32.35,159.5,45.8,244.33,54.89,270.63,57.7,296.2,59.34,321.39,56.44Z"></path></svg>
                <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full hidden xl:block translate-x-[1px] fill-current ${activeTheme.fill}`}><path d="M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z"></path></svg>
              </div>
           </div>
 
-          {/* Calendar Grid */}
-          <div className={`w-full xl:w-7/12 flex-1 p-6 xl:p-12 flex flex-col perspective-1000 z-0 ${activeTheme.bg} ${activeTheme.text}`}>
+          {/* --- CALENDAR GRID (Texture is safely isolated here!) --- */}
+          <div className={`w-full xl:w-7/12 flex-1 p-6 xl:p-12 flex flex-col perspective-1000 z-0 relative overflow-hidden ${activeTheme.bg} ${activeTheme.text}`}>
+             
+             {/* The Paper Noise Mask */}
+             <div 
+               className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" 
+               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}
+             />
+
              <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-10">
                <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">Schedule</h2>
                <div className="flex gap-3 relative z-50">
@@ -236,6 +209,7 @@ export default function WallCalendar() {
                  <motion.button whileTap={{ scale: 0.85 }} onClick={nextMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronRight className="w-5 h-5" /></motion.button>
                </div>
              </div>
+             
              <div className="flex-1 relative z-10 w-full min-h-0">
                <AnimatePresence custom={direction} mode="popLayout">
                  <motion.div
@@ -251,17 +225,6 @@ export default function WallCalendar() {
                </AnimatePresence>
              </div>
           </div>
-
-          {/* Spatial Glare */}
-          <motion.div
-            className="pointer-events-none absolute inset-0 z-40 opacity-50 mix-blend-overlay"
-            style={{ background: "radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%)", left: glareX, top: glareY, transform: "translate(-50%, -50%)", width: "150%", height: "150%" }}
-          />
-          {/* Paper Noise Texture */}
-          <div 
-            className="pointer-events-none absolute inset-0 z-50 mix-blend-multiply opacity-[0.25]" 
-            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}
-          />
         </div>
       </motion.div>
     </main>
