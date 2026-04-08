@@ -6,7 +6,7 @@ import { addMonths, subMonths, setMonth, setYear, format, getYear } from 'date-f
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { toPng } from 'html-to-image';
 import CalendarGrid from '@/components/CalendarGrid';
-import PosterStudio from '@/components/PosterStudio'; 
+import PosterStudio, { ThemeType } from '@/components/PosterStudio'; 
 import MusicPlayer from '@/components/MusicPlayer';
 import { audio } from '@/utils/audio';
 
@@ -28,7 +28,7 @@ export default function WallCalendar() {
   
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [fontStyle, setFontStyle] = useState<'font-sans' | 'font-serif' | 'font-mono'>('font-sans');
-  const [theme, setTheme] = useState<'zinc' | 'sepia' | 'midnight'>('zinc');
+  const [theme, setTheme] = useState<ThemeType>('zinc');
   const [ultraQuality, setUltraQuality] = useState(false);
 
   const posterRef = useRef<HTMLDivElement>(null);
@@ -68,7 +68,7 @@ export default function WallCalendar() {
     setTimeout(async () => {
       try {
         const dataUrl = await toPng(posterRef.current!, { 
-          quality: 1, pixelRatio: ultraQuality ? 4 : 2, backgroundColor: theme === 'midnight' ? '#0f172a' : '#ffffff',
+          quality: 1, pixelRatio: ultraQuality ? 4 : 2, backgroundColor: themeStyles[theme].bgColorHex,
         });
         const link = document.createElement('a');
         link.download = `calendar-${format(currentDate, 'MMM-yyyy')}${ultraQuality ? '-ULTRA' : ''}.png`;
@@ -86,38 +86,43 @@ export default function WallCalendar() {
   const currentYear = getYear(currentDate);
   const heroImage = customImage || monthImages[currentMonthIndex];
 
+  // Upgraded Theme Engine with Hex Backgrounds for the wrapper to prevent bleed
   const themeStyles = {
-    zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]' },
-    sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]' },
-    midnight: { bg: 'bg-slate-900', text: 'text-slate-100', fill: 'text-slate-900' }
+    zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]', bgColorHex: '#fafafa' },
+    sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]', bgColorHex: '#f4ecd8' },
+    midnight: { bg: 'bg-slate-900', text: 'text-slate-100', fill: 'text-slate-900', bgColorHex: '#0f172a' },
+    emerald: { bg: 'bg-[#ecfdf5]', text: 'text-emerald-900', fill: 'text-[#ecfdf5]', bgColorHex: '#ecfdf5' },
+    rose: { bg: 'bg-[#fff1f2]', text: 'text-rose-900', fill: 'text-[#fff1f2]', bgColorHex: '#fff1f2' },   
+    lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' }
   };
   const activeTheme = themeStyles[theme];
 
   return (
     <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
       
-      {/* --- NEW: CUSTOM CSS FOR SWAYING ROPES --- */}
+      {/* --- HYPER-REALISTIC ROPE TEXTURE & WIND PHYSICS --- */}
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes sway1 {
-          0%, 100% { transform: rotate(-1.5deg); }
-          50% { transform: rotate(1.5deg); }
+        .rope-texture {
+          background-color: #d4a373;
+          background-image: repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 3px,
+            rgba(0,0,0,0.15) 3px,
+            rgba(0,0,0,0.15) 5px
+          );
+          box-shadow: inset 3px 0 5px rgba(0,0,0,0.4), inset -2px 0 4px rgba(255,255,255,0.3);
         }
-        @keyframes sway2 {
-          0%, 100% { transform: rotate(-1deg); }
-          50% { transform: rotate(2deg); }
-        }
-        .rope-1 { transform-origin: top center; animation: sway1 4s ease-in-out infinite; }
-        .rope-2 { transform-origin: top center; animation: sway2 5s ease-in-out infinite 1s; }
+        @keyframes sway1 { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+        @keyframes sway2 { 0%, 100% { transform: rotate(1deg); } 50% { transform: rotate(-2deg); } }
+        .rope-sway-1 { transform-origin: top center; animation: sway1 4s ease-in-out infinite; }
+        .rope-sway-2 { transform-origin: top center; animation: sway2 4.5s ease-in-out infinite 0.5s; }
       `}} />
 
-      {/* --- NEW: VIDEO BACKGROUND --- */}
+      {/* Video Background */}
       <video 
-        src="/video.mp4" 
-        autoPlay 
-        loop 
-        muted 
-        playsInline 
-        className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-[2px]"
+        src="/video.mp4" autoPlay loop muted playsInline 
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-[3px]"
       />
 
       {/* Settings Button */}
@@ -138,6 +143,10 @@ export default function WallCalendar() {
         isExporting={isExporting} onExport={exportPoster}
       />
 
+      {/* --- SWAYING HANGING ROPES (Now anchored to the viewport top) --- */}
+      <div className="absolute top-0 left-[25%] xl:left-[35%] w-2 h-[20vh] xl:h-[12vh] rope-texture rope-sway-1 z-0 rounded-b-md shadow-2xl" />
+      <div className="absolute top-0 right-[25%] xl:right-[35%] w-2 h-[20vh] xl:h-[12vh] rope-texture rope-sway-2 z-0 rounded-b-md shadow-2xl" />
+
       {/* 3D Spatial Wrapper */}
       <motion.div
         onMouseMove={handleMouseMove} onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
@@ -145,18 +154,26 @@ export default function WallCalendar() {
         className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
       >
         
-        {/* --- NEW: SWAYING HANGING ROPES --- */}
-        <div className="absolute bottom-full mb-[-20px] left-[15%] w-0.5 h-[50vh] bg-gradient-to-b from-zinc-800 to-zinc-500 z-0 rope-1 shadow-2xl" />
-        <div className="absolute bottom-full mb-[-20px] right-[15%] w-0.5 h-[50vh] bg-gradient-to-b from-zinc-800 to-zinc-500 z-0 rope-2 shadow-2xl" />
-
-        {/* THE EXPORTABLE POSTER (Removed bg-white to fix seam bleeding) */}
+        {/* THE POSTER */}
         <div 
           ref={posterRef} 
-          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)" }}
+          style={{ 
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)",
+            backgroundColor: themeStyles[theme].bgColorHex // Forces base wrapper to match grid to kill 1px gaps
+          }}
           className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}
         >
-          {/* HERO IMAGE */}
-          <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-10 flex-shrink-0">
+          {/* THE PUNCH HOLES & KNOTS (Inside the poster so they tilt with it) */}
+          <div className="absolute top-6 left-[25%] xl:left-[35%] w-5 h-5 bg-black/90 rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-50 flex items-center justify-center">
+             <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_2px_4px_rgba(0,0,0,0.5)] rotate-45" /> {/* The Knot */}
+          </div>
+          <div className="absolute top-6 right-[25%] xl:right-[35%] w-5 h-5 bg-black/90 rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-50 flex items-center justify-center">
+             <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_2px_4px_rgba(0,0,0,0.5)] rotate-[65deg]" /> {/* The Knot */}
+          </div>
+
+
+          {/* 1. HERO IMAGE */}
+          <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 flex-shrink-0">
              <AnimatePresence mode="popLayout">
                <motion.img 
                  key={heroImage} initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 0.9, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}
@@ -180,7 +197,6 @@ export default function WallCalendar() {
                 </motion.div>
              </div>
 
-             {/* Time Warp Overlay */}
              <AnimatePresence>
                {isTimeWarpOpen && (
                  <motion.div 
@@ -207,18 +223,28 @@ export default function WallCalendar() {
                  </motion.div>
                )}
              </AnimatePresence>
-
-             {/* THE SEAM FIX: Scaled SVG to overlap the grid background entirely */}
-             <div className="absolute bottom-0 left-0 w-full h-[60px] xl:w-[60px] xl:h-full xl:bottom-auto xl:right-0 xl:left-auto z-20 pointer-events-none">
-               <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={`w-full h-full block xl:hidden translate-y-[2px] scale-y-[1.02] fill-current ${activeTheme.fill}`}><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C73.69,32.35,159.5,45.8,244.33,54.89,270.63,57.7,296.2,59.34,321.39,56.44Z"></path></svg>
-               <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full hidden xl:block translate-x-[2px] scale-x-[1.02] fill-current ${activeTheme.fill}`}><path d="M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z"></path></svg>
-             </div>
           </div>
 
-          {/* CALENDAR GRID */}
-          <div className={`w-full xl:w-7/12 flex-1 p-6 xl:p-12 flex flex-col perspective-1000 z-0 relative overflow-hidden ${activeTheme.bg} ${activeTheme.text}`}>
+          {/* 2. CALENDAR GRID (Overlap strategy deployed: ml-[-1px] to kill subpixel seams!) */}
+          <div className={`w-full xl:w-7/12 flex-1 p-6 xl:p-12 flex flex-col perspective-1000 z-10 relative overflow-visible ${activeTheme.bg} ${activeTheme.text}`}>
              
-             {/* The Paper Noise Mask */}
+             {/* --- THE SEAM FIX: SVG Wave now lives IN the grid and physically overlaps the image --- */}
+             <div className="absolute top-0 left-0 w-full h-[60px] xl:w-[120px] xl:h-full translate-y-[-99%] xl:translate-y-0 xl:translate-x-[-99%] pointer-events-none z-0">
+               {/* Mobile Horizontal Wave */}
+               <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={`w-full h-full block xl:hidden fill-current ${activeTheme.fill}`}><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C73.69,32.35,159.5,45.8,244.33,54.89,270.63,57.7,296.2,59.34,321.39,56.44Z"></path></svg>
+               {/* Desktop Vertical Wave */}
+               <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full hidden xl:block fill-current ${activeTheme.fill}`}>
+                 <defs>
+                   <filter id="waveNoise"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter>
+                 </defs>
+                 {/* Solid Color Path */}
+                 <path d="M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z" />
+                 {/* Baked-in Noise Texture over the SVG Wave! */}
+                 <path d="M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z" fill="black" filter="url(#waveNoise)" style={{ mixBlendMode: 'multiply', opacity: 0.35 }} />
+               </svg>
+             </div>
+             
+             {/* The Paper Noise Mask for the Grid area */}
              <div 
                className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" 
                style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}
@@ -250,7 +276,6 @@ export default function WallCalendar() {
         </div>
       </motion.div>
 
-      {/* Music Player */}
       <MusicPlayer />
     </main>
   );
