@@ -7,16 +7,13 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { toPng } from 'html-to-image';
 import CalendarGrid from '@/components/CalendarGrid';
 import PosterStudio from '@/components/PosterStudio'; 
-import { audio } from '@/utils/audio';
 import MusicPlayer from '@/components/MusicPlayer';
+import { audio } from '@/utils/audio';
 
 const monthImages = [
-  "https://images.unsplash.com/photo-1445543949571-ffc3e0e2f55e", "https://images.unsplash.com/photo-1433162653888-a571f51cb86a",
-  "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa", "https://images.unsplash.com/photo-1522748906645-95d8adfd52c7",
-  "https://images.unsplash.com/photo-1476041800959-2f10d0590d93", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-  "https://images.unsplash.com/photo-1501426026826-31c667bdf23d", "https://images.unsplash.com/photo-1441974231531-c6227db76b6e",
-  "https://images.unsplash.com/photo-1439853949127-fa647821eba0", "https://images.unsplash.com/photo-1509023464722-18d996393ca8",
-  "https://images.unsplash.com/photo-1478147427282-58a87a120781", "https://images.unsplash.com/photo-1512389142860-9c449e58a543"
+  "/months/jan.png", "/months/feb.png", "/months/mar.png", "/months/apr.png",
+  "/months/may.png", "/months/jun.png", "/months/jul.png", "/months/aug.png",
+  "/months/sep.png", "/months/oct.png", "/months/nov.png", "/months/dec.png"
 ];
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -36,11 +33,9 @@ export default function WallCalendar() {
 
   const posterRef = useRef<HTMLDivElement>(null);
 
-  // Audio-linked Navigation
   const nextMonth = () => { audio.playPaperFlip(); setDirection(1); setCurrentDate(prev => addMonths(prev, 1)); };
   const prevMonth = () => { audio.playPaperFlip(); setDirection(-1); setCurrentDate(prev => subMonths(prev, 1)); };
 
-  // Keyboard Telemetry
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -51,7 +46,6 @@ export default function WallCalendar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Spatial Physics
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 150, damping: 20 });
@@ -90,7 +84,7 @@ export default function WallCalendar() {
 
   const currentMonthIndex = currentDate.getMonth();
   const currentYear = getYear(currentDate);
-  const heroImage = customImage || `${monthImages[currentMonthIndex]}?auto=format&fit=crop&w=1000&q=80`;
+  const heroImage = customImage || monthImages[currentMonthIndex];
 
   const themeStyles = {
     zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]' },
@@ -100,10 +94,33 @@ export default function WallCalendar() {
   const activeTheme = themeStyles[theme];
 
   return (
-    // REVERTED: Light zinc background
-    <main className="w-screen h-screen overflow-hidden bg-zinc-200 flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
+    <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
       
-      {/* REVERTED: White Glassmorphism Settings Button */}
+      {/* --- NEW: CUSTOM CSS FOR SWAYING ROPES --- */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes sway1 {
+          0%, 100% { transform: rotate(-1.5deg); }
+          50% { transform: rotate(1.5deg); }
+        }
+        @keyframes sway2 {
+          0%, 100% { transform: rotate(-1deg); }
+          50% { transform: rotate(2deg); }
+        }
+        .rope-1 { transform-origin: top center; animation: sway1 4s ease-in-out infinite; }
+        .rope-2 { transform-origin: top center; animation: sway2 5s ease-in-out infinite 1s; }
+      `}} />
+
+      {/* --- NEW: VIDEO BACKGROUND --- */}
+      <video 
+        src="/video.mp4" 
+        autoPlay 
+        loop 
+        muted 
+        playsInline 
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-[2px]"
+      />
+
+      {/* Settings Button */}
       <motion.button
         whileHover={{ scale: 1.05, rotate: 90 }} whileTap={{ scale: 0.95 }} 
         onClick={() => { audio.playClick(); setIsSettingsOpen(true); }}
@@ -127,13 +144,18 @@ export default function WallCalendar() {
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
         className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
       >
-        {/* THE EXPORTABLE POSTER (Clean edges, no clip!) */}
+        
+        {/* --- NEW: SWAYING HANGING ROPES --- */}
+        <div className="absolute bottom-full mb-[-20px] left-[15%] w-0.5 h-[50vh] bg-gradient-to-b from-zinc-800 to-zinc-500 z-0 rope-1 shadow-2xl" />
+        <div className="absolute bottom-full mb-[-20px] right-[15%] w-0.5 h-[50vh] bg-gradient-to-b from-zinc-800 to-zinc-500 z-0 rope-2 shadow-2xl" />
+
+        {/* THE EXPORTABLE POSTER (Removed bg-white to fix seam bleeding) */}
         <div 
           ref={posterRef} 
-          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.4)" }}
-          className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle} bg-white`}
+          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)" }}
+          className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}
         >
-          {/* --- HERO IMAGE (Glossy, No Texture, HD) --- */}
+          {/* HERO IMAGE */}
           <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-10 flex-shrink-0">
              <AnimatePresence mode="popLayout">
                <motion.img 
@@ -142,7 +164,6 @@ export default function WallCalendar() {
                />
              </AnimatePresence>
              
-             {/* Text Gradient Overlay (Just enough to read the white text) */}
              <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
                 <motion.div 
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { audio.playClick(); setIsTimeWarpOpen(true); }}
@@ -187,14 +208,14 @@ export default function WallCalendar() {
                )}
              </AnimatePresence>
 
-             {/* Wave Separator */}
+             {/* THE SEAM FIX: Scaled SVG to overlap the grid background entirely */}
              <div className="absolute bottom-0 left-0 w-full h-[60px] xl:w-[60px] xl:h-full xl:bottom-auto xl:right-0 xl:left-auto z-20 pointer-events-none">
-               <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={`w-full h-full block xl:hidden translate-y-[1px] fill-current ${activeTheme.fill}`}><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C73.69,32.35,159.5,45.8,244.33,54.89,270.63,57.7,296.2,59.34,321.39,56.44Z"></path></svg>
-               <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full hidden xl:block translate-x-[1px] fill-current ${activeTheme.fill}`}><path d="M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z"></path></svg>
+               <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={`w-full h-full block xl:hidden translate-y-[2px] scale-y-[1.02] fill-current ${activeTheme.fill}`}><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C73.69,32.35,159.5,45.8,244.33,54.89,270.63,57.7,296.2,59.34,321.39,56.44Z"></path></svg>
+               <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full hidden xl:block translate-x-[2px] scale-x-[1.02] fill-current ${activeTheme.fill}`}><path d="M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z"></path></svg>
              </div>
           </div>
 
-          {/* --- CALENDAR GRID (Texture is safely isolated here!) --- */}
+          {/* CALENDAR GRID */}
           <div className={`w-full xl:w-7/12 flex-1 p-6 xl:p-12 flex flex-col perspective-1000 z-0 relative overflow-hidden ${activeTheme.bg} ${activeTheme.text}`}>
              
              {/* The Paper Noise Mask */}
@@ -228,6 +249,8 @@ export default function WallCalendar() {
           </div>
         </div>
       </motion.div>
+
+      {/* Music Player */}
       <MusicPlayer />
     </main>
   );
