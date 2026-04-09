@@ -86,7 +86,7 @@ const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
           <motion.div 
             initial={{ x: -400, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -400, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 left-0 h-full w-full max-w-[340px] z-50 bg-white/60 backdrop-blur-2xl border-r border-white/50 shadow-2xl p-6 flex flex-col gap-6 overflow-y-auto"
+            className="fixed top-0 left-0 h-full w-full max-w-85 z-50 bg-white/60 backdrop-blur-2xl border-r border-white/50 shadow-2xl p-6 flex flex-col gap-6 overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-zinc-400/20 pb-4">
               <div className="flex items-center gap-2">

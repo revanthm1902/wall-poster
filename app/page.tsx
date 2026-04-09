@@ -45,7 +45,7 @@ const AestheticLoader = () => {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
       transition={{ duration: 1.5, ease: "easeInOut" }}
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
+      className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
     >
       {/* Subtle digital paper noise for texture */}
       <div 
@@ -65,7 +65,7 @@ const AestheticLoader = () => {
         </motion.div>
 
         {/* Minimalist, razor-thin loading line */}
-        <div className="w-[160px] h-[1px] bg-zinc-800 overflow-hidden">
+        <div className="w-40 h-px bg-zinc-800 overflow-hidden">
           <motion.div
             className="h-full bg-zinc-300"
             style={{ width: `${progress}%` }}
@@ -103,7 +103,7 @@ export default function WallCalendar() {
     if (customImage) {
       try {
         localStorage.setItem('wall_cal_custom_image', customImage);
-      } catch (e) {
+      } catch {
         console.error("Storage full! Couldn't save custom image.");
       }
     } else {
@@ -253,26 +253,26 @@ export default function WallCalendar() {
               initial={{ y: "-120vh", opacity: 0, rotateZ: 2 }} // Starts way off screen, slightly tilted
               animate={{ y: 0, opacity: 1, rotateZ: 0 }}      // Drops down and levels out
               transition={{ type: "spring", stiffness: 45, damping: 14, mass: 1.5, delay: 0.1 }} // Heavy, realistic physics
-              className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
+              className="relative w-full max-w-6xl h-full max-h-225 flex items-center justify-center cursor-default z-10"
             >
               
-              <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-1 z-20" />
-              <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-2 z-20" />
+              <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-1 z-20" />
+              <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-2 z-20" />
 
               <div ref={posterRef} style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)", backgroundColor: activeTheme.bgColorHex }} className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}>
                 
                 <div className="absolute top-6 left-[30%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
-                   <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-[2px]" />
+                   <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-0.5" />
                 </div>
                 <div className="absolute top-6 left-[70%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
-                   <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-[65deg] translate-y-[2px]" />
+                   <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-65 translate-y-0.5" />
                 </div>
 
-                <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 flex-shrink-0">
+                <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 shrink-0">
                    <AnimatePresence mode="popLayout">
                      <motion.img key={heroImage} initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 0.9, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} src={heroImage} crossOrigin="anonymous" className="absolute inset-0 w-full h-full object-cover" />
                    </AnimatePresence>
-                   <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
+                   <div className="absolute inset-0 bg-linear-to-t xl:bg-linear-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
                       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { audio.playClick(); setIsTimeWarpOpen(true); }} className="pointer-events-auto cursor-pointer inline-block group/warp">
                         <h1 className="text-white text-6xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-xl group-hover/warp:text-amber-200 transition-colors">{format(currentDate, 'MMM')}</h1>
                         <div className="flex items-center gap-3">
@@ -289,7 +289,7 @@ export default function WallCalendar() {
                            <span className="text-4xl font-bold text-white tracking-widest">{currentYear}</span>
                            <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear + 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronRight /></button>
                          </div>
-                         <div className="grid grid-cols-3 gap-3 w-full max-w-[300px]">
+                         <div className="grid grid-cols-3 gap-3 w-full max-w-75">
                            {MONTH_NAMES.map((m, idx) => (
                              <button key={m} onClick={() => { audio.playPaperFlip(); setCurrentDate(setMonth(currentDate, idx)); setIsTimeWarpOpen(false); }} className={`py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all ${currentMonthIndex === idx ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}>{m}</button>
                            ))}
@@ -300,7 +300,7 @@ export default function WallCalendar() {
                 </div>
 
                 <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-10 ${activeTheme.bg} ${activeTheme.text}`}>
-                   <div className="absolute top-0 right-full w-[60px] xl:w-[120px] h-full hidden xl:block z-0 pointer-events-none">
+                   <div className="absolute top-0 right-full w-15 xl:w-30 h-full hidden xl:block z-0 pointer-events-none">
                      <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={wavePath} /></svg>
                      <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")', maskImage: waveMaskImage, WebkitMaskImage: waveMaskImage, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
                    </div>

@@ -11,15 +11,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 type SavedRange = { id: string; start: string; end: string; note: string };
 
 const ConfettiBurst = () => {
-  const colors = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6'];
+  const confettiConfig = React.useMemo(() => {
+    const colors = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6'];
+    return Array.from({ length: 40 }).map(() => ({
+      x: (Math.random() - 0.5) * 600,
+      y: (Math.random() - 0.5) * 600,
+      scale: Math.random() * 1.5,
+      rotate: Math.random() * 360,
+      duration: 1 + Math.random() * 1.5,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    }));
+  }, []);
+
   return (
     <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center">
-      {Array.from({ length: 40 }).map((_, i) => (
+      {confettiConfig.map((c, i) => (
         <motion.div
           key={i} initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
-          animate={{ x: (Math.random() - 0.5) * 600, y: (Math.random() - 0.5) * 600, scale: Math.random() * 1.5, opacity: 0, rotate: Math.random() * 360 }}
-          transition={{ duration: 1 + Math.random() * 1.5, ease: "easeOut" }}
-          className="absolute w-2 h-2 rounded-sm shadow-sm" style={{ backgroundColor: colors[Math.floor(Math.random() * colors.length)] }}
+          animate={{ x: c.x, y: c.y, scale: c.scale, opacity: 0, rotate: c.rotate }}
+          transition={{ duration: c.duration, ease: "easeOut" }}
+          className="absolute w-2 h-2 rounded-sm shadow-sm" style={{ backgroundColor: c.color }}
         />
       ))}
     </div>
@@ -221,7 +232,7 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
                     <span>{format(day, 'd')}</span>
                     
                     {/* Visual Memory Dots */}
-                    <div className="absolute bottom-[2px] flex gap-1">
+                    <div className="absolute bottom-0.5 flex gap-1">
                       {hasPhantomRange && !isStart && !isEnd && <div className="w-1 h-1 bg-inherit/30 rounded-full" />}
                       {hasSingleNote && !isStart && !isEnd && <div className="w-1 h-1 bg-amber-500 rounded-full shadow-sm" />}
                     </div>
@@ -236,7 +247,7 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
       </div>
 
       {/* --- LAYERED MEMORY UI --- */}
-      <div className="mt-auto pt-6 flex flex-col gap-3 min-h-[120px]">
+      <div className="mt-auto pt-6 flex flex-col gap-3 min-h-30">
         <AnimatePresence mode="wait">
           
           {/* STATE 1: RANGE SELECTED */}
