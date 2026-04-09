@@ -9,6 +9,7 @@ import CalendarGrid from '@/components/CalendarGrid';
 import { audio } from '@/utils/audio';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+<<<<<<< HEAD
 
 // ─── DESKTOP SIDE WAVE ───
 const WAVE_PATH = "M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z";
@@ -17,6 +18,11 @@ const WAVE_MASK = `url("data:image/svg+xml,%3Csvg viewBox='0 0 120 1200' preserv
 // ─── NEW: MOBILE HORIZONTAL WAVE ───
 const H_WAVE_PATH = "M0,120 V56.4 C100,30 180,90 280,60 C380,30 450,10 550,25 C650,40 700,90 800,85 C900,80 1000,40 1200,50 V120 Z";
 const H_WAVE_MASK = `url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 120' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='${H_WAVE_PATH}' fill='black'/%3E%3C/svg%3E")`;
+=======
+const DESKTOP_WAVE_PATH = "M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z";
+const DESKTOP_WAVE_MASK = `url("data:image/svg+xml,%3Csvg viewBox='0 0 120 1200' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='${DESKTOP_WAVE_PATH}' fill='black'/%3E%3C/svg%3E")`;
+const MOBILE_WAVE_PATH = "M0,30 C400,0 800,60 1200,30 V120 H0 Z";
+>>>>>>> ef3440a4908da86b88f751f6cb593fd3d609b645
 
 const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")';
 
@@ -99,7 +105,6 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
   }, [ultraQuality, activeTheme.bgColorHex, currentDate, resetMouse, onExportStateChange]);
 
   useImperativeHandle(ref, () => ({ exportPoster }), [exportPoster]);
-
   const currentMonthIndex = currentDate.getMonth();
   const currentYear = useMemo(() => getYear(currentDate), [currentDate]);
 
@@ -126,16 +131,25 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
         }}
         className={`relative w-full h-full rounded-2xl flex flex-col lg:flex-row overflow-hidden ${fontStyle}`}
       >
+<<<<<<< HEAD
         <div className="absolute top-4 lg:top-6 left-[30%] -translate-x-1/2 w-5 h-5 lg:w-6 lg:h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
           <div className="w-3 h-3 lg:w-3.5 lg:h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-0.5" />
+=======
+        <div className="absolute top-6 left-[30%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
+          <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-0.5" />
+>>>>>>> ef3440a4908da86b88f751f6cb593fd3d609b645
         </div>
         <div className="absolute top-4 lg:top-6 left-[70%] -translate-x-1/2 w-5 h-5 lg:w-6 lg:h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
           <div className="w-3 h-3 lg:w-3.5 lg:h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-[65deg] translate-y-0.5" />
         </div>
 
         {/* ─── HERO IMAGE PANEL ──── */}
+<<<<<<< HEAD
         {/* MOBILE FIX: Restored pb-12 so the wavy edge doesn't clip the date text */}
         <div className="w-full lg:w-5/12 h-[45%] lg:h-full relative group overflow-hidden bg-black z-0 shrink-0 pb-12 lg:pb-0">
+=======
+        <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 shrink-0 pb-16 xl:pb-0">
+>>>>>>> ef3440a4908da86b88f751f6cb593fd3d609b645
           <AnimatePresence mode="popLayout">
             <motion.img
               key={heroImage}
@@ -150,12 +164,20 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
             />
           </AnimatePresence>
 
+<<<<<<< HEAD
           <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/70 via-black/20 to-transparent flex flex-col justify-end lg:justify-center p-6 lg:p-10 z-10 pointer-events-none">
+=======
+          <div className="absolute inset-0 bg-linear-to-t xl:bg-linear-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
+>>>>>>> ef3440a4908da86b88f751f6cb593fd3d609b645
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => { audio.playClick(); onTimeWarpToggle(true); }}
+<<<<<<< HEAD
               className="pointer-events-auto cursor-pointer inline-block group/warp mb-4 lg:mb-0"
+=======
+              className="pointer-events-auto cursor-pointer inline-block group/warp mb-10 xl:mb-0"
+>>>>>>> ef3440a4908da86b88f751f6cb593fd3d609b645
             >
               <h1 className="text-white text-5xl lg:text-7xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-xl group-hover/warp:text-amber-200 transition-colors duration-200">
                 {format(currentDate, 'MMM')}
@@ -203,6 +225,7 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
           </AnimatePresence>
         </div>
 
+<<<<<<< HEAD
         {/* ─── CALENDAR GRID PANEL ──── */}
         {/* MOBILE WAVE FIX: Removed rounded corners. -mt-8 pulls it up just enough for the wave to overlap the image perfectly. */}
         <div className={`w-full lg:w-7/12 flex-1 relative flex flex-col p-5 lg:p-8 xl:p-10 perspective-1000 z-20 -mt-8 lg:mt-0 overflow-y-auto lg:overflow-hidden ${activeTheme.bg} ${activeTheme.text}`}>
@@ -226,6 +249,25 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
             <div className="flex gap-2 lg:gap-3 relative z-50">
               <motion.button whileTap={{ scale: 0.85 }} onClick={prevMonth} className="p-1.5 lg:p-2 rounded-full hover:bg-black/5 transition-all duration-150">
                 <ChevronLeft className="w-5 h-5 lg:w-6 lg:h-6" />
+=======
+        <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-10 overflow-y-auto xl:overflow-hidden -mt-16 xl:mt-0 rounded-t-[3rem] xl:rounded-none shadow-[0_-15px_40px_rgba(0,0,0,0.5)] xl:shadow-none ${activeTheme.bg} ${activeTheme.text}`}>
+          <div className="absolute top-0 right-full w-15 xl:w-30 h-full hidden xl:block z-0 pointer-events-none">
+            <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={DESKTOP_WAVE_PATH} /></svg>
+            <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: NOISE_BG, maskImage: DESKTOP_WAVE_MASK, WebkitMaskImage: DESKTOP_WAVE_MASK, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
+          </div>
+          
+          <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35] rounded-t-[3rem] xl:rounded-none" style={{ backgroundImage: NOISE_BG }} />
+
+          <div className="w-full flex justify-center mb-4 xl:hidden relative z-20 pointer-events-none">
+            <div className="w-12 h-1.5 bg-current opacity-20 rounded-full" />
+          </div>
+
+          <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
+            <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">Wall Poster</h2>
+            <div className="flex gap-3 relative z-50">
+              <motion.button whileTap={{ scale: 0.85 }} onClick={prevMonth} aria-label="Previous month" className="p-2 rounded-full hover:bg-black/5 transition-all duration-150">
+                <ChevronLeft className="w-5 h-5" />
+>>>>>>> ef3440a4908da86b88f751f6cb593fd3d609b645
               </motion.button>
               <motion.button whileTap={{ scale: 0.85 }} onClick={nextMonth} className="p-1.5 lg:p-2 rounded-full hover:bg-black/5 transition-all duration-150">
                 <ChevronRight className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -233,7 +275,11 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
             </div>
           </div>
 
+<<<<<<< HEAD
           <div className="flex-1 relative z-20 w-full min-h-0 pb-10 lg:pb-0 scrollbar-hide" style={{ willChange: "transform" }}>
+=======
+          <div className="flex-1 relative z-20 w-full min-h-0 pb-12 xl:pb-0" style={{ willChange: "transform" }}>
+>>>>>>> ef3440a4908da86b88f751f6cb593fd3d609b645
             <AnimatePresence custom={direction} mode="wait">
               <motion.div
                 key={currentDate.toISOString()} custom={direction}
