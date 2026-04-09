@@ -131,29 +131,26 @@ export default function WallCalendar() {
           const img = new window.Image();
           img.src = src;
 
-          const timer = setTimeout(() => { updateProgress(); resolve(); }, 2000);
-          img.onload = () => { clearTimeout(timer); updateProgress(); resolve(); };
-          img.onerror = () => { clearTimeout(timer); updateProgress(); resolve(); };
+          img.onload = () => { updateProgress(); resolve(); };
+          img.onerror = () => { updateProgress(); resolve(); };
         })
       );
 
       const videoPromise = new Promise<void>(resolve => {
         const vid = document.createElement('video');
-        vid.preload = 'metadata';
+        vid.preload = 'auto';
         vid.src = "/video.mp4";
-        const timer = setTimeout(() => { updateProgress(); resolve(); }, 2000);
-        vid.onloadedmetadata = () => { clearTimeout(timer); updateProgress(); resolve(); };
-        vid.onerror = () => { clearTimeout(timer); updateProgress(); resolve(); };
+        vid.oncanplaythrough = () => { updateProgress(); resolve(); };
+        vid.onerror = () => { updateProgress(); resolve(); };
         vid.load();
       });
 
       const audioPromise = new Promise<void>(resolve => {
         const aud = new Audio();
-        aud.preload = 'metadata';
+        aud.preload = 'auto';
         aud.src = "/song.mp3";
-        const timer = setTimeout(() => { updateProgress(); resolve(); }, 2000);
-        aud.onloadedmetadata = () => { clearTimeout(timer); updateProgress(); resolve(); };
-        aud.onerror = () => { clearTimeout(timer); updateProgress(); resolve(); };
+        aud.oncanplaythrough = () => { updateProgress(); resolve(); };
+        aud.onerror = () => { updateProgress(); resolve(); };
         aud.load();
       });
 
@@ -163,7 +160,7 @@ export default function WallCalendar() {
         img.src = src;
       });
 
-      const timeoutPromise = new Promise<void>(resolve => setTimeout(resolve, 3000));
+      const timeoutPromise = new Promise<void>(resolve => setTimeout(resolve, 8000));
 
       await Promise.race([
         Promise.all([...imagePromises, videoPromise, audioPromise]),
