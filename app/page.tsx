@@ -10,12 +10,12 @@ import MusicPlayer from '@/components/MusicPlayer';
 import { audio } from '@/utils/audio';
 
 const monthImages = [
-  "/months/jan.png", "/months/feb.png", "/months/mar.png", "/months/apr.png",
-  "/months/may.png", "/months/jun.png", "/months/jul.png", "/months/aug.png",
-  "/months/sep.png", "/months/oct.png", "/months/nov.png", "/months/dec.png"
+  "/months/jan.webp", "/months/feb.webp", "/months/mar.webp", "/months/apr.webp",
+  "/months/may.webp", "/months/jun.webp", "/months/jul.webp", "/months/aug.webp",
+  "/months/sep.webp", "/months/oct.webp", "/months/nov.webp", "/months/dec.webp"
 ];
 
-const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")';
+const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%2２ filter=%2２url(%２3noiseFilter)%２２/%３E%３C/svg%３E")';
 
 export type ThemeStyle = { bg: string; text: string; fill: string; bgColorHex: string };
 
@@ -85,7 +85,7 @@ export default function WallCalendar() {
   const [fontStyle, setFontStyle] = useState<'font-sans' | 'font-serif' | 'font-mono'>('font-sans');
   const [theme, setTheme] = useState<ThemeType>('zinc');
   const [ultraQuality, setUltraQuality] = useState(false);
-  
+
   const wallPosterRef = useRef<WallPosterHandle>(null);
   const initialLoadDone = useRef(false);
 
