@@ -74,8 +74,8 @@ Ready to experience the physics and UI locally? Follow these steps to spin up th
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/wallscape.git
-cd wallscape
+git clone https://github.com/yourusername/wall-poster.git
+cd wall-poster
 ```
 
 ### 2. Install Dependencies

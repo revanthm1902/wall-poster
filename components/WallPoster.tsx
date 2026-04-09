@@ -43,7 +43,7 @@ interface WallPosterProps {
 const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
   currentDate, direction, activeTheme, fontStyle, heroImage,
   isTimeWarpOpen, onTimeWarpToggle, onDateChange,
-  nextMonth, prevMonth, isExporting, onExportStateChange, ultraQuality
+  nextMonth, prevMonth, onExportStateChange, ultraQuality
 }, ref) => {
   const posterRef = useRef<HTMLDivElement>(null);
 
@@ -106,10 +106,10 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
       initial={{ y: "-120vh", opacity: 0, rotateZ: 2 }}
       animate={{ y: 0, opacity: 1, rotateZ: 0 }}
       transition={{ type: "spring", stiffness: 38, damping: 16, mass: 1.8, delay: 0.1 }}
-      className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
+      className="relative w-full max-w-6xl h-full max-h-225 flex items-center justify-center cursor-default z-10"
     >
-      <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-1 z-20" style={{ transform: "translateZ(0)" }} />
-      <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-2 z-20" style={{ transform: "translateZ(0)" }} />
+      <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-1 z-20" style={{ transform: "translateZ(0)" }} />
+      <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-2 z-20" style={{ transform: "translateZ(0)" }} />
 
       {/* POSTER FRAME */}
       <div
@@ -127,11 +127,11 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
           <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-0.5" />
         </div>
         <div className="absolute top-6 left-[70%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
-          <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-[65deg] translate-y-0.5" />
+          <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-65 translate-y-0.5" />
         </div>
 
         {/* ─── HERO IMAGE PANEL ──── */}
-        <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 shrink-0">
+        <div className="w-full xl:w-5/12 h-[50%] xl:h-full relative group overflow-hidden bg-black z-0 shrink-0 pb-10 xl:pb-0">
           <AnimatePresence mode="popLayout">
             <motion.img
               key={heroImage}
@@ -147,7 +147,7 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
           </AnimatePresence>
 
           {/* MONTH/YEAR OVERLAY — TimeWarp trigger */}
-          <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
+          <div className="absolute inset-0 bg-linear-to-t xl:bg-linear-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -198,7 +198,7 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
                     <ChevronRight />
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-3 w-full max-w-[300px]">
+                <div className="grid grid-cols-3 gap-3 w-full max-w-75">
                   {MONTH_NAMES.map((m, idx) => (
                     <button
                       key={m}
@@ -216,14 +216,19 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
         </div>
 
         {/* ─── CALENDAR GRID PANEL ──── */}
-        <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-10 ${activeTheme.bg} ${activeTheme.text}`}>
-          <div className="absolute top-0 right-full w-[60px] xl:w-[120px] h-full hidden xl:block z-0 pointer-events-none">
-            <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={WAVE_PATH} /></svg>
-            <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: NOISE_BG, maskImage: WAVE_MASK, WebkitMaskImage: WAVE_MASK, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
-          </div>
-          <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: NOISE_BG }} />
+        <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-20 -mt-12 xl:mt-0 rounded-t-[3rem] xl:rounded-none shadow-[0_-20px_50px_rgba(0,0,0,0.5)] xl:shadow-none 
+          ${activeTheme.bg} ${activeTheme.text}`}>
+          <div className="absolute top-0 right-full w-15 xl:w-30 h-full hidden xl:block z-0 pointer-events-none">
+          <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={WAVE_PATH} /></svg>
+          <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: NOISE_BG, maskImage: WAVE_MASK, WebkitMaskImage: WAVE_MASK, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
+        </div>
+        <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35] rounded-t-[3rem] xl:rounded-none" style={{ backgroundImage: NOISE_BG }} />
 
-          <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
+        <div className="w-full flex justify-center mb-4 xl:hidden relative z-20 pointer-events-none">
+          <div className="w-12 h-1.5 bg-current opacity-20 rounded-full" />
+        </div>
+
+        <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
             <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">Wall Poster</h2>
             <div className="flex gap-3 relative z-50">
               <motion.button whileTap={{ scale: 0.85 }} onClick={prevMonth} aria-label="Previous month" className="p-2 rounded-full hover:bg-black/5 transition-all duration-150">
