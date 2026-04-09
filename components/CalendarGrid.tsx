@@ -263,9 +263,13 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
               <div className="flex items-center gap-4 w-full mb-1">
                 <input
                   type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck="false"
                   aria-label="Event range description"
                   className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30 transition-colors duration-200"
-                  placeholder="E.G., SUMMER HACKATHON..."
+                  placeholder="E.G., TRIP / MEETING..."
                 />
                 <button onClick={handleSaveRange} aria-label="Save event range" className="text-[10px] font-bold px-4 py-1.5 bg-zinc-900 text-white rounded-sm uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200 shadow-sm">Save Range</button>
               </div>
@@ -292,6 +296,10 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
                 <div className="flex items-center gap-4 w-full mb-1">
                   <input
                     type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
+                    enterKeyHint="done"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck="false"
                     aria-label={`Note for ${format(startDate, 'MMM d, yyyy')}`}
                     className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30 transition-colors duration-200"
                     placeholder="ADD DAILY MEMO..."

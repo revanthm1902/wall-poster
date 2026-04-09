@@ -51,3 +51,14 @@ body {
   animation: sway2 4.5s ease-in-out infinite 0.5s;
   will-change: transform;
 }
+
+body {
+  overscroll-behavior-y: none; 
+  -webkit-user-select: none;
+  user-select: none;
+}
+ */
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}

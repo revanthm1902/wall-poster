@@ -233,7 +233,7 @@ export default function WallCalendar() {
         {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
 
-      <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
+      <main className="w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
         <video
           src="/video.mp4"
           autoPlay

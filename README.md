@@ -5,13 +5,13 @@
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Framer](https://img.shields.io/badge/Framer-black?style=for-the-badge&logo=framer&logoColor=blue)
 
-**Wall Poster** is a completely reimagined digital wall calendar application component, built as a definitive Frontend Engineering Challenge. By blending cinematic motion, tactile physics, and refined architectural aesthetics, Wallscape escapes the utilitarian bounds of traditional date-pickers to deliver an immersive, highly curated user experience. Fully client-side and optimized for uncompromising performance, it transforms personal scheduling into a premium interactive surface.
+**Wall Poster** is a completely reimagined digital wall calendar application component, built as a definitive Frontend Engineering Challenge. By blending cinematic motion, tactile physics, and refined architectural aesthetics, Wall Poster escapes the utilitarian bounds of traditional date-pickers to deliver an immersive, highly curated user experience. Fully client-side and optimized for uncompromising performance, it transforms personal scheduling into a premium interactive surface.
 
 ---
 
 ## 🎨 UI Preferences & Design Philosophy
 
-Wallscape was designed with a strict set of UI principles aimed at delivering a "premium tactile" feel, mimicking high-end physical products in a digital space:
+Wall Poster was designed with a strict set of UI principles aimed at delivering a "premium tactile" feel, mimicking high-end physical products in a digital space:
 
 *   **Tactile Physics over Linear Animation:** Every interaction—hovering over a date, opening a note, uploading an image—is bound to Framer Motion spring physics. This provides organic dampening, mass, and stiffness rather than sterile ease-in-out curves.
 *   **Depth & Dimensionality:** Utilizing heavy mouse-tilt parallax `perspective` styling, the calendar feels like a 3D object resting inside the browser.
@@ -22,16 +22,16 @@ Wallscape was designed with a strict set of UI principles aimed at delivering a 
 
 ## ✨ Comprehensive Features & Creative Liberties
 
-While adhering to all core calendar requirements, Wallscape introduces several novel capabilities to delight users and optimize browser performance:
+While adhering to all core calendar requirements, Wall Poster introduces several novel capabilities to delight users and optimize browser performance:
 
 ### 1. The Phantom Memory Engine
 A completely unique UX pattern designed to prevent visual clutter over months of usage. Saved date ranges automatically clear their visual highlights to keep the calendar grid immaculate. However, they remain stored—clicking *any* date within a hidden range instantly summons a floating, contextual **Memory Card** containing all associated notes and data.
 
-### 2. Zero-Latency Cinematic Preloader
-To guarantee a flawless first impression, Wallscape masks its initial boot behind a cinematic loading sequence. Under the hood, a `Promise.all` caching layer pre-fetches and forces the browser to decode all high-fidelity images, videos, and graphical assets into memory *before* revealing the UI, entirely eliminating texture pop-in or layout jank.
+### 2. Intelligent Priority Preloader
+To guarantee a flawless first impression, Wall Poster masks its initial boot behind a cinematic loading sequence. Under the hood, a priority `Promise` cache aggressively forces the browser to decode the *current* month's hero image and background video into memory *before* revealing the UI, perfectly bypassing layout jank. The remaining 11 months are then seamlessly and silently fetched in the background, allowing the user immediate entry on fast or slow connections alike.
 
 ### 3. Canvas Compression Uploads
-Because the application is completely client-side, storing high-resolution user-uploaded hero images directly into `localStorage` would instantly hit the standard 5MB quota. To bypass this, Wallscape features a built-in HTML5 canvas scaler. When an image is uploaded, it is automatically intercepted, resized, deeply compressed, and converted into an optimized Base64 string before saving.
+Because the application is completely client-side, storing high-resolution user-uploaded hero images directly into `localStorage` would instantly hit the standard 5MB quota. To bypass this, Wall Poster features a built-in HTML5 canvas scaler. When an image is uploaded, it is automatically intercepted, resized, deeply compressed, and converted into an optimized Base64 string before saving.
 
 ### 4. Seamless Authoring & High-Fidelity Export
 *   **Triple-Layered Notes:** Users can annotate their calendar at three distinct levels: the entire **Month**, a specific **Cross-Range** of days, or a **Single Day**.
@@ -40,21 +40,31 @@ Because the application is completely client-side, storing high-resolution user-
 
 ---
 
+## 🧠 Key Engineering Decisions
+
+Why were certain tools or patterns used?
+*   **Framer Motion over CSS Transitions:** CSS animations are fundamentally time-based (easing curves). Framer Motion utilizes physics-based math (mass, stiffness, dampening), which is crucial for recreating the heavy, tactile weight of dragging and dropping a physical wall calendar.
+*   **`date-fns` over `moment.js`:** `date-fns` is pure, modular, and headless. It simply outputs math and arrays rather than heavy localized object states, ensuring the UI layer remains completely free to map the grid however it wants without fighting a rigid calendar library.
+*   **Custom Asset Promises over native Next.js `<Image/>`:** While Next.js provides excellent lazy-loading image optimization, this challenge required a synchronized "cinematic boot". Utilizing raw `window.Image()` and `Promise.race()` arrays provided the strict programmatic control needed over *exact* load times to drive the loading bar progression and ensure the video and hero image mounted on the exact same frame.
+*   **`localStorage` over a Database:** To ensure the challenge could be flawlessly reviewed instantly by anyone without provisioning a backend, configuring `.env` variables, or spinning up Docker containers. Data parsing was rigorously typed and compressed to prove frontend ingenuity around standard 5MB browser quotas.
+
+---
+
 ## 🏗️ System Architecture
 
 This application acts as a masterclass in modern frontend architecture, aggressively pushing the limits of the browser by decoupling state, logic, and rendering.
 
 ### 1. The Rendering Layer (Next.js App Router & React)
-Leveraging the power of React Server Components (where applicable) and Next.js App Router for strict, clean routing logic. The application is built using isolated atomic components (`CalendarGrid.tsx`, `PosterStudio.tsx`) to ensure isolated re-renders.
+Leveraging the power of Next.js App Router for strict, clean routing logic alongside `useClient` boundaries. The application is built using isolated atomic components (`CalendarGrid.tsx`, `PosterStudio.tsx`) to ensure isolated, highly optimized re-renders when dragging date ranges.
 
-### 2. The Animation & Physics Engine (Framer Motion)
-Chosen over standard CSS transitions to inject realistic physics into the DOM. Every micro-interaction is mapped to a carefully tuned physics spring (`useSpring`, `AnimatePresence`), including the 3D tilt calculations which trace the user's `clientX/Y` mapping against the component's bounding box.
+### 2. The Animation Engine (Framer Motion)
+Every micro-interaction is mapped to a tuned physics spring, importantly including the 3D tilt calculations which actively trace the user's `clientX/Y` mapping mathematically against the component's bounding box.
 
 ### 3. The Headless Data Logic (date-fns)
 To preserve absolute freedom over the UI mapping, `date-fns` acts as the pure headless engine. Timezone complexities, leap years, offset calculations, and iterating over month grids are handled externally. The UI simply consumes these pure arrays, separating presentation from logic.
 
 ### 4. The Client Data Store (localStorage)
-Because the app guarantees a private, immediate experience with zero backend dependencies, all state—including customized settings, user-uploaded Base64 strings, and saved date notes—is cleanly serialized, typed, and pushed into `localStorage` via persistent React `useEffect` hooks.
+Because the app guarantees a private, immediate experience, all state—including customized settings, user-uploaded Base64 strings, and saved date notes—is cleanly serialized, typed, and pushed into `localStorage` via persistent React hooks.
 
 ---
 
