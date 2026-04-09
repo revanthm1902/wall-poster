@@ -265,7 +265,7 @@ export default function WallCalendar() {
                <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
 
                <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
-                 <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">The Itinerary</h2>
+                 <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">Wall Poster</h2>
                  <div className="flex gap-3 relative z-50">
                    <motion.button whileTap={{ scale: 0.85 }} onClick={prevMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronLeft className="w-5 h-5" /></motion.button>
                    <motion.button whileTap={{ scale: 0.85 }} onClick={nextMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronRight className="w-5 h-5" /></motion.button>

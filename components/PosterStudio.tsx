@@ -30,13 +30,47 @@ export default function PosterStudio({
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => onImageChange(event.target?.result as string);
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      // Create an invisible image element to calculate dimensions
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Smart Scaling: Max 1200px on the longest side to preserve quality but kill file size
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 1200;
+
+        if (width > height && width > maxSize) {
+          height *= maxSize / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width *= maxSize / height;
+          height = maxSize;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw the resized image onto the canvas
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress to a highly optimized JPEG (70% quality)
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        
+        // Send this optimized string to our main app state
+        onImageChange(compressedBase64);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
