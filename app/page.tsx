@@ -90,7 +90,7 @@ export default function WallCalendar() {
     zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]', bgColorHex: '#fafafa' },
     sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]', bgColorHex: '#f4ecd8' },
     midnight: { bg: 'bg-slate-900', text: 'text-slate-100', fill: 'text-slate-900', bgColorHex: '#0f172a' },
-    emerald: { bg: 'bg-[#ecfdf5]', text: 'text-emerald-900', fill: 'text-[#ecfdf5]', bgColorHex: '#ecfdf5' },
+    emerald: { bg: 'bg-[#ecfdf5]', text: 'textemerald-900', fill: 'text-[#ecfdf5]', bgColorHex: '#ecfdf5' },
     rose: { bg: 'bg-[#fff1f2]', text: 'text-rose-900', fill: 'text-[#fff1f2]', bgColorHex: '#fff1f2' },   
     lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' }
   };
@@ -130,14 +130,13 @@ export default function WallCalendar() {
         className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
       >
         
-        {/* --- ANTI-GRAVITY ROPES --- */}
-        {/* Sitting OUTSIDE the overflow-hidden poster, anchored perfectly to the holes, extending 150vh UPWARDS */}
-        <div className="absolute bottom-[calc(100%-36px)] left-[30%] -translate-x-1/2 w-1.5 h-[150vh] rope-texture rope-sway-1 z-20" />
-        <div className="absolute bottom-[calc(100%-36px)] left-[70%] -translate-x-1/2 w-1.5 h-[150vh] rope-texture rope-sway-2 z-20" />
+        {/* --- INFINITE ANTI-GRAVITY ROPES --- */}
+        <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-1 z-20" />
+        <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-2 z-20" />
 
         <div ref={posterRef} style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)", backgroundColor: activeTheme.bgColorHex }} className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}>
           
-          {/* THE HOLES & KNOTS (Inside the poster) */}
+          {/* THE HOLES */}
           <div className="absolute top-6 left-[30%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
              <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-[2px]" />
           </div>
@@ -181,7 +180,6 @@ export default function WallCalendar() {
                <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={wavePath} /></svg>
                <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")', maskImage: waveMaskImage, WebkitMaskImage: waveMaskImage, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
              </div>
-             
              <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
 
              <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
@@ -193,7 +191,6 @@ export default function WallCalendar() {
              </div>
              
              <div className="flex-1 relative z-20 w-full min-h-0">
-               {/* --- THE REALTIME FOLDING TRANSITION --- */}
                <AnimatePresence custom={direction} mode="wait">
                  <motion.div
                    key={currentDate.toISOString()} custom={direction}
