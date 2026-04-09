@@ -9,7 +9,6 @@ import PosterStudio, { ThemeType } from '@/components/PosterStudio';
 import MusicPlayer from '@/components/MusicPlayer';
 import { audio } from '@/utils/audio';
 
-// 1. WEBP UPDATE
 const monthImages = [
   "/months/jan.webp", "/months/feb.webp", "/months/mar.webp", "/months/apr.webp",
   "/months/may.webp", "/months/jun.webp", "/months/jul.webp", "/months/aug.webp",
@@ -38,7 +37,7 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, filter: "blur(8px)", scale: 1.04 }}
       transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed inset-0 z-200 flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
     >
       <div
         className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none"
@@ -53,9 +52,9 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
             Preparing your Wall...
           </h1>
         </motion.div>
-        <div className="w-48 h-0.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="w-48 h-[2px] bg-zinc-800 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-linear-to-r from-zinc-400 to-zinc-200 rounded-full"
+            className="h-full bg-gradient-to-r from-zinc-400 to-zinc-200 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4, ease: "easeOut" }}
@@ -77,14 +76,14 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
 export default function WallCalendar() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 9)); // Set to April 9th, 2026
   const [direction, setDirection] = useState(1);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTimeWarpOpen, setIsTimeWarpOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [fontStyle, setFontStyle] = useState<'font-sans' | 'font-serif' | 'font-mono'>('font-sans');
-  const [theme, setTheme] = useState<ThemeType>('zinc');
+  const [theme, setTheme] = useState<ThemeType>('sepia'); // Sepia is the theme in the image
   const [ultraQuality, setUltraQuality] = useState(false);
 
   const wallPosterRef = useRef<WallPosterHandle>(null);
@@ -115,11 +114,9 @@ export default function WallCalendar() {
 
     const loadAssets = async () => {
       const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
-      const currentMonthIndex = new Date().getMonth();
-      const currentMonthImage = monthImages[currentMonthIndex];
-      
-      const priorityImages = savedCustomImage ? [savedCustomImage] : [currentMonthImage];
-      const totalAssets = priorityImages.length + 2; 
+      // Load EVERYTHING immediately for instant interaction
+      const allImagesToPreload = savedCustomImage ? [...monthImages, savedCustomImage] : [...monthImages];
+      const totalAssets = allImagesToPreload.length + 2; // Video, Audio
       let loadedCount = 0;
 
       const updateProgress = () => {
@@ -127,7 +124,8 @@ export default function WallCalendar() {
         setLoadProgress(Math.round((loadedCount / totalAssets) * 100));
       };
 
-      const imagePromises = priorityImages.map(src =>
+      // 1. HARD CACHE ALL IMAGES via JS Image object
+      const imagePromises = allImagesToPreload.map(src =>
         new Promise<void>(resolve => {
           const img = new window.Image();
           img.src = src;
@@ -136,6 +134,7 @@ export default function WallCalendar() {
         })
       );
 
+      // 2. PRELOAD VIDEO
       const videoPromise = new Promise<void>(resolve => {
         const vid = document.createElement('video');
         vid.preload = 'auto';
@@ -152,6 +151,7 @@ export default function WallCalendar() {
         vid.load();
       });
 
+      // 3. PRELOAD AUDIO
       const audioPromise = new Promise<void>(resolve => {
         const aud = new Audio();
         aud.preload = 'auto';
@@ -176,40 +176,8 @@ export default function WallCalendar() {
     loadAssets().then(() => {
       const elapsed = performance.now() - loadStart;
       const remaining = Math.max(0, ACTUAL_MIN_LOADER_MS - elapsed);
-      
-      setTimeout(() => {
-        setIsLoading(false); 
-        
-        setTimeout(() => {
-          const currentIdx = new Date().getMonth();
-          const nextIdx = (currentIdx + 1) % 12;
-          const prevIdx = (currentIdx - 1 + 12) % 12;
-
-          const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
-          if (savedCustomImage) return; 
-
-          const injectPreload = (src: string) => {
-            const link = document.createElement('link');
-            link.rel = 'preload';
-            link.as = 'image';
-            link.href = src;
-            document.head.appendChild(link);
-          };
-
-          injectPreload(monthImages[nextIdx]);
-          injectPreload(monthImages[prevIdx]);
-
-          setTimeout(() => {
-            monthImages.forEach((src, idx) => {
-              if (idx !== currentIdx && idx !== nextIdx && idx !== prevIdx) {
-                injectPreload(src);
-              }
-            });
-          }, 2000);
-
-        }, 1000);
-
-      }, remaining);
+      // Wait for smooth DOM painting, then instantly reveal.
+      setTimeout(() => setIsLoading(false), remaining);
     });
   }, []);
 
@@ -257,8 +225,7 @@ export default function WallCalendar() {
         {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
 
-      {/* 2. MOBILE 100DVH FIX */}
-      <main className="w-screen h-dvh overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
+      <main className="w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
         <video
           src="/video.mp4"
           autoPlay
@@ -272,6 +239,7 @@ export default function WallCalendar() {
         <AnimatePresence>
           {!isLoading && (
             <>
+              {/* SETTINGS TRIGGER */}
               <motion.button
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -285,12 +253,14 @@ export default function WallCalendar() {
                 <Settings2 className="w-6 h-6" />
               </motion.button>
 
+              {/* POSTER STUDIO MODAL */}
               <PosterStudio
                 isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} customImage={customImage} onImageChange={setCustomImage}
                 fontStyle={fontStyle} onFontStyleChange={setFontStyle} theme={theme} onThemeChange={setTheme}
                 ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
               />
 
+              {/* THE WALL POSTER (Self-contained structure) */}
               <WallPoster
                 ref={wallPosterRef}
                 currentDate={currentDate}
@@ -308,6 +278,7 @@ export default function WallCalendar() {
                 ultraQuality={ultraQuality}
               />
 
+              {/* MUSIC PLAYER BUTTON */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
