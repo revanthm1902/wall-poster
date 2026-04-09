@@ -26,30 +26,18 @@ const THEME_STYLES: Record<ThemeType, ThemeStyle> = {
   lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' },
 };
 
-const AestheticLoader = () => {
-  const [progress, setProgress] = useState(0);
+/* ─── MINIMUM PRELOADER DISPLAY ─── */
+const MIN_LOADER_MS = 1800;
 
-  useEffect(() => {
-    const duration = 3000;
-    const startTime = performance.now();
-
-    const animate = (time: number) => {
-      const elapsed = time - startTime;
-      const p = Math.min(elapsed / duration, 1);
-      const easeProgress = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-      setProgress(easeProgress * 100);
-      if (p < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, []);
-
+/* ─── AESTHETIC LOADER ─── */
+const AestheticLoader = ({ progress }: { progress: number }) => {
   return (
     <motion.div
       key="loader"
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-      transition={{ duration: 1.5, ease: "easeInOut" }}
-      className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
+      exit={{ opacity: 0, filter: "blur(8px)", scale: 1.04 }}
+      transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1] }}
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
     >
       <div
         className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none"
@@ -64,9 +52,22 @@ const AestheticLoader = () => {
             Preparing your Wall...
           </h1>
         </motion.div>
-        <div className="w-40 h-px bg-zinc-800 overflow-hidden">
-          <motion.div className="h-full bg-zinc-300" style={{ width: `${progress}%` }} />
+        <div className="w-48 h-[2px] bg-zinc-800 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-gradient-to-r from-zinc-400 to-zinc-200 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
         </div>
+        <motion.p
+          className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          {Math.round(progress)}%
+        </motion.p>
       </div>
     </motion.div>
   );
@@ -74,6 +75,7 @@ const AestheticLoader = () => {
 
 export default function WallCalendar() {
   const [isLoading, setIsLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [direction, setDirection] = useState(1);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -85,12 +87,15 @@ export default function WallCalendar() {
   const [ultraQuality, setUltraQuality] = useState(false);
 
   const wallPosterRef = useRef<WallPosterHandle>(null);
+  const initialLoadDone = useRef(false);
 
+  // ─── RESTORE CUSTOM IMAGE FROM LOCALSTORAGE ───
   useEffect(() => {
     const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
     if (savedCustomImage) setCustomImage(savedCustomImage);
   }, []);
 
+  // ─── PERSIST CUSTOM IMAGE TO LOCALSTORAGE ───
   useEffect(() => {
     if (customImage) {
       try {
@@ -103,32 +108,65 @@ export default function WallCalendar() {
     }
   }, [customImage]);
 
+  // ─── ASSET PRELOADER (runs once on mount, with real progress tracking) ───
   useEffect(() => {
-    const loadAssets = async () => {
-      const allImagesToPreload = customImage ? [...monthImages, customImage] : monthImages;
+    if (initialLoadDone.current) return;
+    initialLoadDone.current = true;
 
-      const imagePromises = allImagesToPreload.map(src => {
-        return new Promise(resolve => {
+    const loadStart = performance.now();
+
+    const loadAssets = async () => {
+      const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
+      const allImagesToPreload = savedCustomImage
+        ? [...monthImages, savedCustomImage]
+        : monthImages;
+
+      // All assets: images + video + audio
+      const totalAssets = allImagesToPreload.length + 2; // +1 video, +1 audio
+      let loadedCount = 0;
+
+      const updateProgress = () => {
+        loadedCount++;
+        setLoadProgress(Math.round((loadedCount / totalAssets) * 100));
+      };
+
+      const imagePromises = allImagesToPreload.map(src =>
+        new Promise<void>(resolve => {
           const img = new window.Image();
           img.src = src;
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      });
+          img.onload = () => { updateProgress(); resolve(); };
+          img.onerror = () => { updateProgress(); resolve(); };
+        })
+      );
 
-      const videoPromise = new Promise(resolve => {
+      const videoPromise = new Promise<void>(resolve => {
         const vid = document.createElement('video');
+        vid.preload = 'auto';
         vid.src = "/video.mp4";
-        vid.onloadeddata = resolve;
-        vid.onerror = resolve;
+        vid.onloadeddata = () => { updateProgress(); resolve(); };
+        vid.onerror = () => { updateProgress(); resolve(); };
         vid.load();
       });
 
-      await Promise.all([...imagePromises, videoPromise]);
+      const audioPromise = new Promise<void>(resolve => {
+        const aud = new Audio();
+        aud.preload = 'auto';
+        aud.src = "/song.mp3";
+        aud.oncanplaythrough = () => { updateProgress(); resolve(); };
+        aud.onerror = () => { updateProgress(); resolve(); };
+        aud.load();
+      });
+
+      await Promise.all([...imagePromises, videoPromise, audioPromise]);
     };
 
-    loadAssets().then(() => setIsLoading(false));
-  }, [customImage]);
+    loadAssets().then(() => {
+      // Enforce minimum display time so preloader doesn't just flash
+      const elapsed = performance.now() - loadStart;
+      const remaining = Math.max(0, MIN_LOADER_MS - elapsed);
+      setTimeout(() => setIsLoading(false), remaining);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nextMonth = useCallback(() => {
     audio.playPaperFlip();
@@ -170,13 +208,14 @@ export default function WallCalendar() {
 
   return (
     <>
+      {/* ─── PRELOADER (covers everything with z-200) ─── */}
       <AnimatePresence mode="wait">
-        {isLoading && <AestheticLoader />}
+        {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
 
       <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
 
-        {/* BACKGROUND */}
+        {/* BACKGROUND VIDEO — always mounted so it starts buffering */}
         <video
           src="/video.mp4"
           autoPlay
@@ -187,47 +226,60 @@ export default function WallCalendar() {
           className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-[3px]"
         />
 
-        {/* SETTINGS TRIGGER */}
-        <motion.button
-          whileHover={{ scale: 1.05, rotate: 90 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => { audio.playClick(); setIsSettingsOpen(true); }}
-          aria-label="Open settings"
-          className="absolute top-6 left-6 z-40 p-3 bg-white/80 backdrop-blur-md shadow-lg rounded-full text-zinc-800 border border-white/40 hover:bg-white transition-all duration-200 ease-out"
-        >
-          <Settings2 className="w-6 h-6" />
-        </motion.button>
-
-        {/* POSTER STUDIO */}
-        <PosterStudio
-          isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} customImage={customImage} onImageChange={setCustomImage}
-          fontStyle={fontStyle} onFontStyleChange={setFontStyle} theme={theme} onThemeChange={setTheme}
-          ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
-        />
-
-        {/* WALL POSTER */}
+        {/* Everything below fades in after loading completes */}
         <AnimatePresence>
           {!isLoading && (
-            <WallPoster
-              ref={wallPosterRef}
-              currentDate={currentDate}
-              direction={direction}
-              activeTheme={activeTheme}
-              fontStyle={fontStyle}
-              heroImage={heroImage}
-              isTimeWarpOpen={isTimeWarpOpen}
-              onTimeWarpToggle={setIsTimeWarpOpen}
-              onDateChange={setCurrentDate}
-              nextMonth={nextMonth}
-              prevMonth={prevMonth}
-              isExporting={isExporting}
-              onExportStateChange={setIsExporting}
-              ultraQuality={ultraQuality}
-            />
+            <>
+              {/* SETTINGS TRIGGER */}
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.4, ease: "easeOut" }}
+                whileHover={{ scale: 1.05, rotate: 90 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { audio.playClick(); setIsSettingsOpen(true); }}
+                aria-label="Open settings"
+                className="absolute top-6 left-6 z-40 p-3 bg-white/80 backdrop-blur-md shadow-lg rounded-full text-zinc-800 border border-white/40 hover:bg-white transition-all duration-200 ease-out"
+              >
+                <Settings2 className="w-6 h-6" />
+              </motion.button>
+
+              {/* POSTER STUDIO */}
+              <PosterStudio
+                isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} customImage={customImage} onImageChange={setCustomImage}
+                fontStyle={fontStyle} onFontStyleChange={setFontStyle} theme={theme} onThemeChange={setTheme}
+                ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
+              />
+
+              {/* WALL POSTER — drops from top with spring animation */}
+              <WallPoster
+                ref={wallPosterRef}
+                currentDate={currentDate}
+                direction={direction}
+                activeTheme={activeTheme}
+                fontStyle={fontStyle}
+                heroImage={heroImage}
+                isTimeWarpOpen={isTimeWarpOpen}
+                onTimeWarpToggle={setIsTimeWarpOpen}
+                onDateChange={setCurrentDate}
+                nextMonth={nextMonth}
+                prevMonth={prevMonth}
+                isExporting={isExporting}
+                onExportStateChange={setIsExporting}
+                ultraQuality={ultraQuality}
+              />
+
+              {/* MUSIC PLAYER */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2, duration: 0.5, ease: "easeOut" }}
+              >
+                <MusicPlayer />
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
-
-        <MusicPlayer />
       </main>
     </>
   );
