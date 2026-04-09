@@ -261,16 +261,17 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
             <motion.div key="range-edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={panelTransition} className="flex flex-col border-t border-inherit/10 pt-4">
               <span className="text-[10px] font-bold text-inherit/40 uppercase tracking-widest mb-2">New Event Range</span>
               <div className="flex items-center gap-4 w-full mb-1">
-                <input
-                  type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
-                  enterKeyHint="done"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck="false"
-                  aria-label="Event range description"
-                  className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30 transition-colors duration-200"
-                  placeholder="E.G., TRIP / MEETING..."
-                />
+              <input 
+                type="text" 
+                value={inputText} 
+                onChange={(e) => setInputText(e.target.value)}
+                enterKeyHint="done"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
+                className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30"
+                placeholder="ADD DAILY MEMO..."
+              />
                 <button onClick={handleSaveRange} aria-label="Save event range" className="text-[10px] font-bold px-4 py-1.5 bg-zinc-900 text-white rounded-sm uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200 shadow-sm">Save Range</button>
               </div>
               <span className="text-xs font-semibold text-inherit/60">{format(startDate, 'MMM d')} - {format(endDate, 'MMM d')}</span>

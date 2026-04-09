@@ -9,13 +9,14 @@ import PosterStudio, { ThemeType } from '@/components/PosterStudio';
 import MusicPlayer from '@/components/MusicPlayer';
 import { audio } from '@/utils/audio';
 
+// 1. WEBP UPDATE
 const monthImages = [
   "/months/jan.webp", "/months/feb.webp", "/months/mar.webp", "/months/apr.webp",
   "/months/may.webp", "/months/jun.webp", "/months/jul.webp", "/months/aug.webp",
   "/months/sep.webp", "/months/oct.webp", "/months/nov.webp", "/months/dec.webp"
 ];
 
-const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%2２ filter=%2２url(%２3noiseFilter)%２２/%３E%３C/svg%３E")';
+const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")';
 
 export type ThemeStyle = { bg: string; text: string; fill: string; bgColorHex: string };
 
@@ -109,14 +110,16 @@ export default function WallCalendar() {
   useEffect(() => {
     if (initialLoadDone.current) return;
     initialLoadDone.current = true;
+
     const loadStart = performance.now();
 
     const loadAssets = async () => {
       const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
       const currentMonthIndex = new Date().getMonth();
       const currentMonthImage = monthImages[currentMonthIndex];
+      
       const priorityImages = savedCustomImage ? [savedCustomImage] : [currentMonthImage];
-      const totalAssets = priorityImages.length + 2;
+      const totalAssets = priorityImages.length + 2; 
       let loadedCount = 0;
 
       const updateProgress = () => {
@@ -139,6 +142,7 @@ export default function WallCalendar() {
         vid.src = "/video.mp4";
         vid.muted = true;
         vid.playsInline = true;
+
         vid.oncanplaythrough = () => { updateProgress(); resolve(); };
         vid.onerror = () => { 
           console.warn("Video preload blocked or failed.");
@@ -162,6 +166,7 @@ export default function WallCalendar() {
       });
 
       const timeoutPromise = new Promise<void>(resolve => setTimeout(resolve, 8000));
+
       await Promise.race([
         Promise.all([...imagePromises, videoPromise, audioPromise]),
         timeoutPromise
@@ -173,16 +178,36 @@ export default function WallCalendar() {
       const remaining = Math.max(0, ACTUAL_MIN_LOADER_MS - elapsed);
       
       setTimeout(() => {
-        setIsLoading(false);
+        setIsLoading(false); 
+        
         setTimeout(() => {
-          const currentMonthIndex = new Date().getMonth();
-          const currentMonthImage = monthImages[currentMonthIndex];
-          const backgroundImages = monthImages.filter(img => img !== currentMonthImage);
-          backgroundImages.forEach(src => {
-            const img = new window.Image();
-            img.src = src;
-          });
-        }, 1500);
+          const currentIdx = new Date().getMonth();
+          const nextIdx = (currentIdx + 1) % 12;
+          const prevIdx = (currentIdx - 1 + 12) % 12;
+
+          const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
+          if (savedCustomImage) return; 
+
+          const injectPreload = (src: string) => {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = src;
+            document.head.appendChild(link);
+          };
+
+          injectPreload(monthImages[nextIdx]);
+          injectPreload(monthImages[prevIdx]);
+
+          setTimeout(() => {
+            monthImages.forEach((src, idx) => {
+              if (idx !== currentIdx && idx !== nextIdx && idx !== prevIdx) {
+                injectPreload(src);
+              }
+            });
+          }, 2000);
+
+        }, 1000);
 
       }, remaining);
     });
@@ -200,7 +225,6 @@ export default function WallCalendar() {
     setCurrentDate(prev => subMonths(prev, 1));
   }, []);
 
-  // GLOBAL KEYBOARD SHORTCUTS
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -233,6 +257,7 @@ export default function WallCalendar() {
         {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
 
+      {/* 2. MOBILE 100DVH FIX */}
       <main className="w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
         <video
           src="/video.mp4"
@@ -247,7 +272,6 @@ export default function WallCalendar() {
         <AnimatePresence>
           {!isLoading && (
             <>
-              {/* SETTINGS TRIGGER */}
               <motion.button
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -261,14 +285,12 @@ export default function WallCalendar() {
                 <Settings2 className="w-6 h-6" />
               </motion.button>
 
-              {/* POSTER STUDIO */}
               <PosterStudio
                 isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} customImage={customImage} onImageChange={setCustomImage}
                 fontStyle={fontStyle} onFontStyleChange={setFontStyle} theme={theme} onThemeChange={setTheme}
                 ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
               />
 
-              {/* THE WALL POSTER*/}
               <WallPoster
                 ref={wallPosterRef}
                 currentDate={currentDate}
@@ -286,7 +308,6 @@ export default function WallCalendar() {
                 ultraQuality={ultraQuality}
               />
 
-              {/* MUSIC PLAYER */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

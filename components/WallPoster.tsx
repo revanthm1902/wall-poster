@@ -54,7 +54,8 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
   const rotateX = useTransform(springY, [-0.5, 0.5], ["3deg", "-3deg"]);
   const rotateY = useTransform(springX, [-0.5, 0.5], ["-3deg", "3deg"]);
 
-const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Disable 3D tilt on touch devices for better mobile UX
     if (window.matchMedia("(pointer: coarse)").matches) return; 
     const rect = e.currentTarget.getBoundingClientRect();
     mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
@@ -105,10 +106,10 @@ const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
       initial={{ y: "-120vh", opacity: 0, rotateZ: 2 }}
       animate={{ y: 0, opacity: 1, rotateZ: 0 }}
       transition={{ type: "spring", stiffness: 38, damping: 16, mass: 1.8, delay: 0.1 }}
-      className="relative w-full max-w-6xl h-full max-h-225 flex items-center justify-center cursor-default z-10"
+      className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
     >
-      <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-1 z-20" style={{ transform: "translateZ(0)" }} />
-      <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-2 z-20" style={{ transform: "translateZ(0)" }} />
+      <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-1 z-20" style={{ transform: "translateZ(0)" }} />
+      <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-2 z-20" style={{ transform: "translateZ(0)" }} />
 
       {/* POSTER FRAME */}
       <div
@@ -126,7 +127,7 @@ const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
           <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-0.5" />
         </div>
         <div className="absolute top-6 left-[70%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
-          <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-65 translate-y-0.5" />
+          <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-[65deg] translate-y-0.5" />
         </div>
 
         {/* ─── HERO IMAGE PANEL ──── */}
@@ -146,7 +147,7 @@ const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
           </AnimatePresence>
 
           {/* MONTH/YEAR OVERLAY — TimeWarp trigger */}
-          <div className="absolute inset-0 bg-linear-to-t xl:bg-linear-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -197,7 +198,7 @@ const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
                     <ChevronRight />
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-3 w-full max-w-75">
+                <div className="grid grid-cols-3 gap-3 w-full max-w-[300px]">
                   {MONTH_NAMES.map((m, idx) => (
                     <button
                       key={m}
@@ -216,7 +217,7 @@ const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
 
         {/* ─── CALENDAR GRID PANEL ──── */}
         <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-10 ${activeTheme.bg} ${activeTheme.text}`}>
-          <div className="absolute top-0 right-full w-15 xl:w-30 h-full hidden xl:block z-0 pointer-events-none">
+          <div className="absolute top-0 right-full w-[60px] xl:w-[120px] h-full hidden xl:block z-0 pointer-events-none">
             <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={WAVE_PATH} /></svg>
             <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: NOISE_BG, maskImage: WAVE_MASK, WebkitMaskImage: WAVE_MASK, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
           </div>
@@ -234,7 +235,8 @@ const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
             </div>
           </div>
 
-          <div className="flex-1 relative z-20 w-full min-h-0" style={{ willChange: "transform" }}>
+          {/* CRITICAL MOBILE FIX: overflow-y-auto added here so only the calendar/notes scroll! */}
+          <div className="flex-1 relative z-20 w-full min-h-0 overflow-y-auto xl:overflow-visible pb-12 xl:pb-0 scrollbar-hide" style={{ willChange: "transform" }}>
             <AnimatePresence custom={direction} mode="wait">
               <motion.div
                 key={currentDate.toISOString()} custom={direction}
