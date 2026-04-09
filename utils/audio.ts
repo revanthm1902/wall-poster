@@ -12,11 +12,7 @@ class AudioEngine {
     }
   }
 
-  playClick() { /* ... existing code ... */ }
-  playPaperFlip() { /* ... existing code ... */ }
-  playShutter() { /* ... existing code ... */ }
-
-  // --- NEW: PROCEDURAL AMBIENT SYNTHESIZER ---
+  // --- PROCEDURAL AMBIENT SYNTHESIZER ---
   toggleAmbient(): boolean {
     this.init();
     if (!this.context) return false;

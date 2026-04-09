@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Settings2, X } from 'lucide-react';
 import { addMonths, subMonths, setMonth, setYear, format, getYear } from 'date-fns';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
@@ -143,8 +143,17 @@ export default function WallCalendar() {
     });
   }, [customImage]);
 
-  const nextMonth = () => { audio.playPaperFlip(); setDirection(1); setCurrentDate(prev => addMonths(prev, 1)); };
-  const prevMonth = () => { audio.playPaperFlip(); setDirection(-1); setCurrentDate(prev => subMonths(prev, 1)); };
+  const nextMonth = useCallback(() => {
+    audio.playPaperFlip();
+    setDirection(1);
+    setCurrentDate(prev => addMonths(prev, 1));
+  }, []);
+
+  const prevMonth = useCallback(() => {
+    audio.playPaperFlip();
+    setDirection(-1);
+    setCurrentDate(prev => subMonths(prev, 1));
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -159,22 +168,33 @@ export default function WallCalendar() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [nextMonth, prevMonth]);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 150, damping: 20 });
-  const springY = useSpring(mouseY, { stiffness: 150, damping: 20 });
+  const springX = useSpring(mouseX, { stiffness: 120, damping: 22 });
+  const springY = useSpring(mouseY, { stiffness: 120, damping: 22 });
   const rotateX = useTransform(springY, [-0.5, 0.5], ["3deg", "-3deg"]);
   const rotateY = useTransform(springX, [-0.5, 0.5], ["-3deg", "3deg"]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
     mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
+  }, [mouseX, mouseY]);
 
-  const exportPoster = async () => {
+  const themeStyles = useMemo(() => ({
+    zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]', bgColorHex: '#fafafa' },
+    sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]', bgColorHex: '#f4ecd8' },
+    midnight: { bg: 'bg-slate-900', text: 'text-slate-100', fill: 'text-slate-900', bgColorHex: '#0f172a' },
+    emerald: { bg: 'bg-[#ecfdf5]', text: 'text-emerald-900', fill: 'text-[#ecfdf5]', bgColorHex: '#ecfdf5' },
+    rose: { bg: 'bg-[#fff1f2]', text: 'text-rose-900', fill: 'text-[#fff1f2]', bgColorHex: '#fff1f2' },   
+    lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' }
+  }), []);
+
+  const activeTheme = useMemo(() => themeStyles[theme], [themeStyles, theme]);
+
+  const exportPoster = useCallback(async () => {
     if (!posterRef.current) return;
     setIsExporting(true);
     audio.playShutter();
@@ -183,7 +203,7 @@ export default function WallCalendar() {
     setTimeout(async () => {
       try {
         const dataUrl = await toPng(posterRef.current!, { 
-          quality: 1, pixelRatio: ultraQuality ? 4 : 2, backgroundColor: themeStyles[theme].bgColorHex,
+          quality: 1, pixelRatio: ultraQuality ? 4 : 2, backgroundColor: activeTheme.bgColorHex,
         });
         const link = document.createElement('a');
         link.download = `calendar-${format(currentDate, 'MMM-yyyy')}${ultraQuality ? '-ULTRA' : ''}.png`;
@@ -195,21 +215,15 @@ export default function WallCalendar() {
         setIsExporting(false);
       }
     }, 150);
-  };
+  }, [ultraQuality, activeTheme.bgColorHex, currentDate, mouseX, mouseY]);
 
   const currentMonthIndex = currentDate.getMonth();
   const currentYear = getYear(currentDate);
-  const heroImage = customImage || monthImages[currentMonthIndex];
+  const heroImage = useMemo(
+    () => customImage || monthImages[currentMonthIndex],
+    [customImage, currentMonthIndex]
+  );
 
-  const themeStyles = {
-    zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]', bgColorHex: '#fafafa' },
-    sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]', bgColorHex: '#f4ecd8' },
-    midnight: { bg: 'bg-slate-900', text: 'text-slate-100', fill: 'text-slate-900', bgColorHex: '#0f172a' },
-    emerald: { bg: 'bg-[#ecfdf5]', text: 'text-emerald-900', fill: 'text-[#ecfdf5]', bgColorHex: '#ecfdf5' },
-    rose: { bg: 'bg-[#fff1f2]', text: 'text-rose-900', fill: 'text-[#fff1f2]', bgColorHex: '#fff1f2' },   
-    lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' }
-  };
-  const activeTheme = themeStyles[theme];
   const wavePath = "M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z";
   const waveMaskImage = `url("data:image/svg+xml,%3Csvg viewBox='0 0 120 1200' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='${wavePath}' fill='black'/%3E%3C/svg%3E")`;
 
@@ -229,11 +243,22 @@ export default function WallCalendar() {
           .rope-sway-2 { transform-origin: bottom center; animation: sway2 4.5s ease-in-out infinite 0.5s; }
         `}} />
 
-        <video src="/video.mp4" autoPlay loop={true} muted playsInline className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-[3px]" />
+        <video
+          src="/video.mp4"
+          autoPlay
+          loop={true}
+          muted
+          playsInline
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-[3px]"
+        />
 
         <motion.button
-          whileHover={{ scale: 1.05, rotate: 90 }} whileTap={{ scale: 0.95 }} onClick={() => { audio.playClick(); setIsSettingsOpen(true); }}
-          className="absolute top-6 left-6 z-40 p-3 bg-white/80 backdrop-blur-md shadow-lg rounded-full text-zinc-800 border border-white/40 hover:bg-white transition-colors"
+          whileHover={{ scale: 1.05, rotate: 90 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => { audio.playClick(); setIsSettingsOpen(true); }}
+          aria-label="Open settings"
+          className="absolute top-6 left-6 z-40 p-3 bg-white/80 backdrop-blur-md shadow-lg rounded-full text-zinc-800 border border-white/40 hover:bg-white transition-all duration-200 ease-out"
         >
           <Settings2 className="w-6 h-6" />
         </motion.button>
@@ -248,18 +273,28 @@ export default function WallCalendar() {
         <AnimatePresence>
           {!isLoading && (
             <motion.div
-              onMouseMove={handleMouseMove} onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
-              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-              initial={{ y: "-120vh", opacity: 0, rotateZ: 2 }} // Starts way off screen, slightly tilted
-              animate={{ y: 0, opacity: 1, rotateZ: 0 }}      // Drops down and levels out
-              transition={{ type: "spring", stiffness: 45, damping: 14, mass: 1.5, delay: 0.1 }} // Heavy, realistic physics
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
+              style={{ rotateX, rotateY, transformStyle: "preserve-3d", willChange: "transform" }}
+              initial={{ y: "-120vh", opacity: 0, rotateZ: 2 }}
+              animate={{ y: 0, opacity: 1, rotateZ: 0 }}
+              transition={{ type: "spring", stiffness: 38, damping: 16, mass: 1.8, delay: 0.1 }}
               className="relative w-full max-w-6xl h-full max-h-225 flex items-center justify-center cursor-default z-10"
             >
               
-              <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-1 z-20" />
-              <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-2 z-20" />
+              <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-1 z-20" style={{ transform: "translateZ(0)" }} />
+              <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-2 z-20" style={{ transform: "translateZ(0)" }} />
 
-              <div ref={posterRef} style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)", backgroundColor: activeTheme.bgColorHex }} className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}>
+              <div
+                ref={posterRef}
+                role="region"
+                aria-label="Calendar poster"
+                style={{
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)",
+                  backgroundColor: activeTheme.bgColorHex,
+                }}
+                className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}
+              >
                 
                 <div className="absolute top-6 left-[30%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
                    <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-0.5" />
@@ -270,28 +305,77 @@ export default function WallCalendar() {
 
                 <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 shrink-0">
                    <AnimatePresence mode="popLayout">
-                     <motion.img key={heroImage} initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 0.9, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} src={heroImage} crossOrigin="anonymous" className="absolute inset-0 w-full h-full object-cover" />
+                     <motion.img
+                       key={heroImage}
+                       initial={{ opacity: 0, scale: 1.1 }}
+                       animate={{ opacity: 0.9, scale: 1 }}
+                       exit={{ opacity: 0 }}
+                       transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+                       src={heroImage}
+                       crossOrigin="anonymous"
+                       alt={`${format(currentDate, 'MMMM yyyy')} calendar image`}
+                       className="absolute inset-0 w-full h-full object-cover"
+                     />
                    </AnimatePresence>
                    <div className="absolute inset-0 bg-linear-to-t xl:bg-linear-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { audio.playClick(); setIsTimeWarpOpen(true); }} className="pointer-events-auto cursor-pointer inline-block group/warp">
-                        <h1 className="text-white text-6xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-xl group-hover/warp:text-amber-200 transition-colors">{format(currentDate, 'MMM')}</h1>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => { audio.playClick(); setIsTimeWarpOpen(true); }}
+                        className="pointer-events-auto cursor-pointer inline-block group/warp"
+                      >
+                        <h1 className="text-white text-6xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-xl group-hover/warp:text-amber-200 transition-colors duration-200">
+                          {format(currentDate, 'MMM')}
+                        </h1>
                         <div className="flex items-center gap-3">
-                          <p className="text-white/90 text-2xl xl:text-3xl font-bold tracking-widest uppercase mt-2 group-hover/warp:text-amber-200/80 transition-colors">{format(currentDate, 'yyyy')}</p>
+                          <p className="text-white/90 text-2xl xl:text-3xl font-bold tracking-widest uppercase mt-2 group-hover/warp:text-amber-200/80 transition-colors duration-200">
+                            {format(currentDate, 'yyyy')}
+                          </p>
                         </div>
                       </motion.div>
                    </div>
                    <AnimatePresence>
                      {isTimeWarpOpen && (
-                       <motion.div initial={{ opacity: 0, backdropFilter: "blur(0px)" }} animate={{ opacity: 1, backdropFilter: "blur(16px)" }} exit={{ opacity: 0, backdropFilter: "blur(0px)" }} className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center p-8 pointer-events-auto">
-                         <button onClick={() => { audio.playClick(); setIsTimeWarpOpen(false); }} className="absolute top-6 right-6 p-2 text-white/50 hover:text-white bg-black/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                       <motion.div
+                         initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                         animate={{ opacity: 1, backdropFilter: "blur(16px)" }}
+                         exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                         className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center p-8 pointer-events-auto"
+                       >
+                         <button
+                           onClick={() => { audio.playClick(); setIsTimeWarpOpen(false); }}
+                           aria-label="Close time warp"
+                           className="absolute top-6 right-6 p-2 text-white/50 hover:text-white bg-black/20 rounded-full transition-all duration-200"
+                         >
+                           <X className="w-5 h-5" />
+                         </button>
                          <div className="flex items-center gap-4 mb-8">
-                           <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear - 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronLeft /></button>
+                           <button
+                             onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear - 1)); }}
+                             aria-label="Previous year"
+                             className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all duration-150"
+                           >
+                             <ChevronLeft />
+                           </button>
                            <span className="text-4xl font-bold text-white tracking-widest">{currentYear}</span>
-                           <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear + 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronRight /></button>
+                           <button
+                             onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear + 1)); }}
+                             aria-label="Next year"
+                             className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all duration-150"
+                           >
+                             <ChevronRight />
+                           </button>
                          </div>
                          <div className="grid grid-cols-3 gap-3 w-full max-w-75">
                            {MONTH_NAMES.map((m, idx) => (
-                             <button key={m} onClick={() => { audio.playPaperFlip(); setCurrentDate(setMonth(currentDate, idx)); setIsTimeWarpOpen(false); }} className={`py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all ${currentMonthIndex === idx ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}>{m}</button>
+                             <button
+                               key={m}
+                               onClick={() => { audio.playPaperFlip(); setCurrentDate(setMonth(currentDate, idx)); setIsTimeWarpOpen(false); }}
+                               aria-label={`Go to ${m}`}
+                               className={`py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all duration-200 ${currentMonthIndex === idx ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                             >
+                               {m}
+                             </button>
                            ))}
                          </div>
                        </motion.div>
@@ -309,19 +393,33 @@ export default function WallCalendar() {
                    <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
                      <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">The Itinerary</h2>
                      <div className="flex gap-3 relative z-50">
-                       <motion.button whileTap={{ scale: 0.85 }} onClick={prevMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronLeft className="w-5 h-5" /></motion.button>
-                       <motion.button whileTap={{ scale: 0.85 }} onClick={nextMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronRight className="w-5 h-5" /></motion.button>
+                       <motion.button
+                         whileTap={{ scale: 0.85 }}
+                         onClick={prevMonth}
+                         aria-label="Previous month"
+                         className="p-2 rounded-full hover:bg-black/5 transition-all duration-150"
+                       >
+                         <ChevronLeft className="w-5 h-5" />
+                       </motion.button>
+                       <motion.button
+                         whileTap={{ scale: 0.85 }}
+                         onClick={nextMonth}
+                         aria-label="Next month"
+                         className="p-2 rounded-full hover:bg-black/5 transition-all duration-150"
+                       >
+                         <ChevronRight className="w-5 h-5" />
+                       </motion.button>
                      </div>
                    </div>
                    
-                   <div className="flex-1 relative z-20 w-full min-h-0">
+                   <div className="flex-1 relative z-20 w-full min-h-0" style={{ willChange: "transform" }}>
                      <AnimatePresence custom={direction} mode="wait">
                        <motion.div
                          key={currentDate.toISOString()} custom={direction}
                          initial={{ rotateY: direction > 0 ? 90 : -90, opacity: 0, scale: 0.95 }}
                          animate={{ rotateY: 0, opacity: 1, scale: 1 }}
                          exit={{ rotateY: direction < 0 ? 90 : -90, opacity: 0, scale: 0.95 }}
-                         transition={{ duration: 0.35, ease: "easeInOut" }}
+                         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
                          style={{ transformOrigin: direction > 0 ? "left center" : "right center" }}
                          className="absolute inset-0 w-full h-full"
                        >
