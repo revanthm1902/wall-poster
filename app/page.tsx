@@ -16,6 +16,7 @@ const monthImages = [
 ];
 
 const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")';
+
 export type ThemeStyle = { bg: string; text: string; fill: string; bgColorHex: string };
 
 const THEME_STYLES: Record<ThemeType, ThemeStyle> = {
@@ -84,6 +85,7 @@ export default function WallCalendar() {
   const [fontStyle, setFontStyle] = useState<'font-sans' | 'font-serif' | 'font-mono'>('font-sans');
   const [theme, setTheme] = useState<ThemeType>('zinc');
   const [ultraQuality, setUltraQuality] = useState(false);
+  
   const wallPosterRef = useRef<WallPosterHandle>(null);
   const initialLoadDone = useRef(false);
 
@@ -114,7 +116,7 @@ export default function WallCalendar() {
       const currentMonthIndex = new Date().getMonth();
       const currentMonthImage = monthImages[currentMonthIndex];
       const priorityImages = savedCustomImage ? [savedCustomImage] : [currentMonthImage];
-      const totalAssets = priorityImages.length + 2; // +1 Video, +1 Audio
+      const totalAssets = priorityImages.length + 2;
       let loadedCount = 0;
 
       const updateProgress = () => {
@@ -137,7 +139,6 @@ export default function WallCalendar() {
         vid.src = "/video.mp4";
         vid.muted = true;
         vid.playsInline = true;
-
         vid.oncanplaythrough = () => { updateProgress(); resolve(); };
         vid.onerror = () => { 
           console.warn("Video preload blocked or failed.");
@@ -160,14 +161,7 @@ export default function WallCalendar() {
         aud.load();
       });
 
-      const backgroundImages = monthImages.filter(img => img !== currentMonthImage);
-      backgroundImages.forEach(src => {
-        const img = new window.Image();
-        img.src = src;
-      });
-
       const timeoutPromise = new Promise<void>(resolve => setTimeout(resolve, 8000));
-
       await Promise.race([
         Promise.all([...imagePromises, videoPromise, audioPromise]),
         timeoutPromise
@@ -177,7 +171,20 @@ export default function WallCalendar() {
     loadAssets().then(() => {
       const elapsed = performance.now() - loadStart;
       const remaining = Math.max(0, ACTUAL_MIN_LOADER_MS - elapsed);
-      setTimeout(() => setIsLoading(false), remaining);
+      
+      setTimeout(() => {
+        setIsLoading(false);
+        setTimeout(() => {
+          const currentMonthIndex = new Date().getMonth();
+          const currentMonthImage = monthImages[currentMonthIndex];
+          const backgroundImages = monthImages.filter(img => img !== currentMonthImage);
+          backgroundImages.forEach(src => {
+            const img = new window.Image();
+            img.src = src;
+          });
+        }, 1500);
+
+      }, remaining);
     });
   }, []);
 
@@ -210,6 +217,7 @@ export default function WallCalendar() {
   }, [nextMonth, prevMonth]);
 
   const activeTheme = useMemo(() => THEME_STYLES[theme], [theme]);
+
   const heroImage = useMemo(
     () => customImage || monthImages[currentDate.getMonth()],
     [customImage, currentDate]
@@ -224,6 +232,7 @@ export default function WallCalendar() {
       <AnimatePresence mode="wait">
         {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
+
       <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
         <video
           src="/video.mp4"
@@ -259,7 +268,7 @@ export default function WallCalendar() {
                 ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
               />
 
-              {/* THE WALL POSTER */}
+              {/* THE WALL POSTER*/}
               <WallPoster
                 ref={wallPosterRef}
                 currentDate={currentDate}
