@@ -12,20 +12,18 @@ class AudioEngine {
     }
   }
 
-  // --- PROCEDURAL AMBIENT SYNTHESIZER ---
   toggleAmbient(): boolean {
     this.init();
     if (!this.context) return false;
 
     if (this.isPlayingAmbient) {
-      // Fade out and stop
       const masterGain = this.ambientNodes.find(n => n.id === 'master');
       if (masterGain) {
         masterGain.node.gain.setTargetAtTime(0, this.context.currentTime, 1);
         setTimeout(() => {
           this.ambientNodes.forEach(item => {
-            try { item.node.stop(); } catch(e) {}
-            try { item.node.disconnect(); } catch(e) {}
+            try { item.node.stop(); } catch (e) { }
+            try { item.node.disconnect(); } catch (e) { }
           });
           this.ambientNodes = [];
         }, 2000);
@@ -33,16 +31,15 @@ class AudioEngine {
       this.isPlayingAmbient = false;
       return false;
     } else {
-      // Start lush ambient drone (Cmaj9 Chord)
-      const root = 130.81;  // C3
-      const fifth = 196.00; // G3
-      const maj7 = 246.94;  // B3
-      const ninth = 293.66; // D4
+      const root = 130.81;
+      const fifth = 196.00;
+      const maj7 = 246.94;
+      const ninth = 293.66;
       const frequencies = [root, fifth, maj7, ninth];
 
       const masterGain = this.context.createGain();
       masterGain.gain.setValueAtTime(0, this.context.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.12, this.context.currentTime + 3); // 3 second fade-in
+      masterGain.gain.linearRampToValueAtTime(0.12, this.context.currentTime + 3);
       masterGain.connect(this.context.destination);
       this.ambientNodes.push({ id: 'master', node: masterGain });
 
@@ -54,10 +51,9 @@ class AudioEngine {
         osc.type = 'sine';
         osc.frequency.value = freq;
 
-        // The LFO makes the notes slowly fade in and out independently (the "breathing" effect)
         lfo.type = 'sine';
-        lfo.frequency.value = 0.05 + (i * 0.02); // Extremely slow modulation
-        
+        lfo.frequency.value = 0.05 + (i * 0.02);
+
         const lfoGain = this.context!.createGain();
         lfoGain.gain.value = 0.8;
 
@@ -75,13 +71,12 @@ class AudioEngine {
         this.ambientNodes.push({ id: `gain-${i}`, node: gain });
         this.ambientNodes.push({ id: `lfoGain-${i}`, node: lfoGain });
       });
-      
+
       this.isPlayingAmbient = true;
       return true;
     }
   }
 
-  // --- RE-ADDING YOUR OLD SOUNDS SO THEY DON'T BREAK ---
   playClick() {
     this.init();
     if (!this.context) return;

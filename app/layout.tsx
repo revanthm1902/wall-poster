@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wall Poster — Interactive Digital Calendar",
+  title: "Wall Poster - Interactive Digital Calendar",
   description: "An ultra-premium, interactive digital wall poster calendar with customizable themes, notes, and export capabilities.",
 };
 

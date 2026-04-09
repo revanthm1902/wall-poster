@@ -4,7 +4,6 @@ import React, { useRef } from 'react';
 import { Settings2, X, Upload, Download, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// We define our expanded type here
 export type ThemeType = 'zinc' | 'sepia' | 'midnight' | 'emerald' | 'rose' | 'lavender';
 
 interface PosterStudioProps {
@@ -23,27 +22,25 @@ interface PosterStudioProps {
 }
 
 export default function PosterStudio({
-  isOpen, onClose, customImage, onImageChange, 
-  fontStyle, onFontStyleChange, theme, onThemeChange, 
+  isOpen, onClose, customImage, onImageChange,
+  fontStyle, onFontStyleChange, theme, onThemeChange,
   ultraQuality, onUltraQualityChange, isExporting, onExport
 }: PosterStudioProps) {
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      // Create an invisible image element to calculate dimensions
       const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Smart Scaling: Max 1200px on the longest side to preserve quality but kill file size
         let width = img.width;
         let height = img.height;
         const maxSize = 1200;
@@ -55,17 +52,11 @@ const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
           width *= maxSize / height;
           height = maxSize;
         }
-
         canvas.width = width;
         canvas.height = height;
-        
-        // Draw the resized image onto the canvas
+
         ctx.drawImage(img, 0, 0, width, height);
-        
-        // Compress to a highly optimized JPEG (70% quality)
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-        
-        // Send this optimized string to our main app state
         onImageChange(compressedBase64);
       };
       img.src = event.target?.result as string;
@@ -77,14 +68,14 @@ const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
             className="fixed inset-0 z-40 bg-zinc-900/20 backdrop-blur-sm"
           />
-          
-          <motion.div 
+
+          <motion.div
             initial={{ x: -400, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -400, opacity: 0 }}
             transition={{ type: "spring", damping: 28, stiffness: 180 }}
             role="dialog"
@@ -151,7 +142,7 @@ const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <button onClick={() => onThemeChange('zinc')} aria-label="Select zinc theme" className={`h-10 rounded-md bg-zinc-900 border-2 shadow-inner transition-all duration-200 hover:scale-105 ${theme === 'zinc' ? 'border-amber-400' : 'border-transparent'}`} title="Zinc" />
                 <button onClick={() => onThemeChange('sepia')} aria-label="Select sepia theme" className={`h-10 rounded-md bg-[#8c7355] border-2 shadow-inner transition-all duration-200 hover:scale-105 ${theme === 'sepia' ? 'border-amber-400' : 'border-transparent'}`} title="Sepia" />
                 <button onClick={() => onThemeChange('midnight')} aria-label="Select midnight theme" className={`h-10 rounded-md bg-blue-950 border-2 shadow-inner transition-all duration-200 hover:scale-105 ${theme === 'midnight' ? 'border-amber-400' : 'border-transparent'}`} title="Midnight" />
-                
+
                 <button onClick={() => onThemeChange('emerald')} aria-label="Select emerald theme" className={`h-10 rounded-md bg-emerald-800 border-2 shadow-inner transition-all duration-200 hover:scale-105 ${theme === 'emerald' ? 'border-amber-400' : 'border-transparent'}`} title="Emerald" />
                 <button onClick={() => onThemeChange('rose')} aria-label="Select rose theme" className={`h-10 rounded-md bg-rose-800 border-2 shadow-inner transition-all duration-200 hover:scale-105 ${theme === 'rose' ? 'border-amber-400' : 'border-transparent'}`} title="Rose" />
                 <button onClick={() => onThemeChange('lavender')} aria-label="Select lavender theme" className={`h-10 rounded-md bg-purple-800 border-2 shadow-inner transition-all duration-200 hover:scale-105 ${theme === 'lavender' ? 'border-amber-400' : 'border-transparent'}`} title="Lavender" />

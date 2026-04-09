@@ -1,15 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { 
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek, 
-  eachDayOfInterval, format, isSameMonth, isSameDay, 
-  isToday, isWithinInterval, isAfter, isBefore 
+import {
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek,
+  eachDayOfInterval, format, isSameMonth, isSameDay,
+  isToday, isWithinInterval, isAfter, isBefore
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type SavedRange = { id: string; start: string; end: string; note: string };
-
 const panelTransition = { duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] as const };
 
 const ConfettiBurst = () => {
@@ -44,29 +43,27 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   const [inputText, setInputText] = useState("");
-  
+
   const [singleNotes, setSingleNotes] = useState<Record<string, string>>({});
   const [monthNotes, setMonthNotes] = useState<Record<string, string>>({});
   const [savedRanges, setSavedRanges] = useState<SavedRange[]>([]);
-  
+
   const [showConfetti, setShowConfetti] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  // LOAD MEMORY
   useEffect(() => {
     const sSingle = localStorage.getItem('cal_single_notes');
     const sMonth = localStorage.getItem('cal_month_notes');
     const sRanges = localStorage.getItem('cal_ranges');
-    
+
     if (sSingle) setSingleNotes(JSON.parse(sSingle));
     if (sMonth) setMonthNotes(JSON.parse(sMonth));
     if (sRanges) setSavedRanges(JSON.parse(sRanges));
-    
+
     setIsLoaded(true);
   }, []);
 
-  // AUTO-SAVE MEMORY
   useEffect(() => {
     if (!isLoaded) return;
     localStorage.setItem('cal_single_notes', JSON.stringify(singleNotes));
@@ -74,7 +71,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
     localStorage.setItem('cal_ranges', JSON.stringify(savedRanges));
   }, [singleNotes, monthNotes, savedRanges, isLoaded]);
 
-  // UPDATE INPUT CONTEXT
   useEffect(() => {
     setIsSaved(false);
     if (startDate && !endDate) {
@@ -86,7 +82,7 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
     }
   }, [startDate, endDate, currentDate, singleNotes, monthNotes]);
 
-  // GLOBAL ESCAPE KEY LISTENER FOR GRID
+  // GLOBAL ESCAPE KEY
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -100,7 +96,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
-  // Memoize the days array — only recalculate when the month changes
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -113,7 +108,7 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
 
   const onDateClick = useCallback((day: Date) => {
     if (!isSameMonth(day, startOfMonth(currentDate))) return;
-    
+
     setStartDate(prev => {
       if (prev && !endDate) {
         if (isBefore(day, prev)) {
@@ -121,7 +116,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
         } else if (isSameDay(day, prev)) {
           return null;
         } else {
-          // Setting end date — needs to be handled via separate setState
           setEndDate(day);
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 2500);
@@ -133,7 +127,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
     });
   }, [currentDate, endDate]);
 
-  // EXPLICIT SAVE & DISMISS WORKFLOW
   const handleSaveRange = useCallback(() => {
     if (!startDate || !endDate || !inputText.trim()) return;
     const newRange: SavedRange = {
@@ -143,8 +136,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
       note: inputText
     };
     setSavedRanges(prev => [...prev, newRange]);
-    
-    // Clear visual selection immediately after saving
     setStartDate(null); setEndDate(null); setInputText(""); setHoverDate(null);
   }, [startDate, endDate, inputText]);
 
@@ -152,14 +143,12 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
     if (!startDate) return;
     const key = format(startDate, 'yyyy-MM-dd');
     if (!inputText.trim()) {
-       const newNotes = {...singleNotes};
-       delete newNotes[key];
-       setSingleNotes(newNotes);
+      const newNotes = { ...singleNotes };
+      delete newNotes[key];
+      setSingleNotes(newNotes);
     } else {
-       setSingleNotes(prev => ({ ...prev, [key]: inputText }));
+      setSingleNotes(prev => ({ ...prev, [key]: inputText }));
     }
-    
-    // Show brief saved state, then dismiss
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
@@ -170,11 +159,11 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
   const handleSaveMonth = useCallback(() => {
     const key = format(currentDate, 'yyyy-MM');
     if (!inputText.trim()) {
-       const newNotes = {...monthNotes};
-       delete newNotes[key];
-       setMonthNotes(newNotes);
+      const newNotes = { ...monthNotes };
+      delete newNotes[key];
+      setMonthNotes(newNotes);
     } else {
-       setMonthNotes(prev => ({ ...prev, [key]: inputText }));
+      setMonthNotes(prev => ({ ...prev, [key]: inputText }));
     }
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
@@ -184,27 +173,27 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
     (id: string) => setSavedRanges(prev => prev.filter(r => r.id !== id)),
     []
   );
-  
+
   const deleteSingleNote = useCallback(() => {
     if (!startDate) return;
     const key = format(startDate, 'yyyy-MM-dd');
-    const newNotes = {...singleNotes};
+    const newNotes = { ...singleNotes };
     delete newNotes[key];
     setSingleNotes(newNotes);
     setInputText("");
-    setStartDate(null); // Dismiss after delete
+    setStartDate(null);
   }, [startDate, singleNotes]);
 
   const deleteMonthNote = useCallback(() => {
     const key = format(currentDate, 'yyyy-MM');
-    const newNotes = {...monthNotes};
+    const newNotes = { ...monthNotes };
     delete newNotes[key];
     setMonthNotes(newNotes);
     setInputText("");
   }, [currentDate, monthNotes]);
 
   const activeOverlappingRanges = useMemo(
-    () => startDate && !endDate 
+    () => startDate && !endDate
       ? savedRanges.filter(r => isWithinInterval(startDate, { start: new Date(r.start), end: new Date(r.end) }))
       : [],
     [startDate, endDate, savedRanges]
@@ -227,7 +216,7 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
           const isEnd = endDate && isSameDay(day, endDate);
           const isMiddle = startDate && endDate && isWithinInterval(day, { start: startDate, end: endDate }) && !isStart && !isEnd;
           const isHoverMiddle = startDate && !endDate && hoverDate && isAfter(hoverDate, startDate) && isWithinInterval(day, { start: startDate, end: hoverDate }) && !isStart;
-          
+
           const hasSingleNote = singleNotes[format(day, 'yyyy-MM-dd')];
           const hasPhantomRange = savedRanges.some(r => isWithinInterval(day, { start: new Date(r.start), end: new Date(r.end) }));
 
@@ -249,7 +238,7 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
                     `}
                   >
                     <span>{format(day, 'd')}</span>
-                    
+
                     {/* Visual Memory Dots */}
                     <div className="absolute bottom-0.5 flex gap-1">
                       {hasPhantomRange && !isStart && !isEnd && <div className="w-1 h-1 bg-inherit/30 rounded-full" />}
@@ -264,17 +253,15 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
           );
         })}
       </div>
-
-      {/* --- LAYERED MEMORY UI --- */}
       <div className="mt-auto pt-6 flex flex-col gap-3 min-h-30">
         <AnimatePresence mode="wait">
-          
+
           {/* STATE 1: RANGE SELECTED */}
           {startDate && endDate && (
             <motion.div key="range-edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={panelTransition} className="flex flex-col border-t border-inherit/10 pt-4">
               <span className="text-[10px] font-bold text-inherit/40 uppercase tracking-widest mb-2">New Event Range</span>
               <div className="flex items-center gap-4 w-full mb-1">
-                <input 
+                <input
                   type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
                   aria-label="Event range description"
                   className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30 transition-colors duration-200"
@@ -289,8 +276,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
           {/* STATE 2: SINGLE DATE CLICKED */}
           {startDate && !endDate && (
             <motion.div key="single-edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={panelTransition} className="flex flex-col border-t border-inherit/10 pt-4 gap-4">
-              
-              {/* Phantom Memory Cards */}
               {activeOverlappingRanges.map(r => (
                 <div key={r.id} className="flex justify-between items-center bg-black/5 rounded-md p-2 px-3">
                   <div className="flex flex-col">
@@ -305,8 +290,8 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold text-inherit/40 uppercase tracking-widest mb-2">Note for {format(startDate, 'MMM d, yyyy')}</span>
                 <div className="flex items-center gap-4 w-full mb-1">
-                  <input 
-                    type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} 
+                  <input
+                    type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
                     aria-label={`Note for ${format(startDate, 'MMM d, yyyy')}`}
                     className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30 transition-colors duration-200"
                     placeholder="ADD DAILY MEMO..."
@@ -329,7 +314,7 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
             <motion.div key="month-edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={panelTransition} className="flex flex-col border-t border-inherit/10 pt-4">
               <span className="text-[10px] font-bold text-inherit/40 uppercase tracking-widest mb-2">{format(currentDate, 'MMMM')} Canvas</span>
               <div className="flex items-center gap-4 w-full mb-1">
-                <input 
+                <input
                   type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
                   aria-label={`Monthly note for ${format(currentDate, 'MMMM yyyy')}`}
                   className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-transparent hover:border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30 transition-colors duration-200"
@@ -346,7 +331,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
               </div>
             </motion.div>
           )}
-
         </AnimatePresence>
       </div>
     </div>

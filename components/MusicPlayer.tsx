@@ -8,39 +8,32 @@ import { audio } from '@/utils/audio';
 export default function MusicPlayer() {
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasInteracted = useRef(false);
 
   useEffect(() => {
-    // Initialize the audio
     audioRef.current = new Audio('/song.mp3');
     audioRef.current.loop = true;
-    audioRef.current.volume = 0.5; // 50% volume so it's a vibe, not overpowering
-    
-    // Attempt instant auto-play
+    audioRef.current.volume = 0.5;
+
     const playPromise = audioRef.current.play();
-    
+
     if (playPromise !== undefined) {
       playPromise.then(() => {
-        // Success! Browser allowed auto-play
         setIsPlaying(true);
         hasInteracted.current = true;
       }).catch(() => {
-        // Browser blocked auto-play. Let's use the "First Click" workaround.
         console.log("Browser paused auto-play. Waiting for first interaction...");
-        
+
         const startOnInteraction = () => {
           if (!hasInteracted.current && audioRef.current) {
             audioRef.current.play();
             setIsPlaying(true);
             hasInteracted.current = true;
           }
-          // Remove listener once triggered so it doesn't fire again
           document.removeEventListener('click', startOnInteraction);
         };
-        
-        // Listen for ANY click on the entire webpage
         document.addEventListener('click', startOnInteraction);
       });
     }
@@ -54,9 +47,9 @@ export default function MusicPlayer() {
   }, []);
 
   const toggleMusic = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation(); // Don't trigger the global click listener
+    e.stopPropagation();
     audio.playClick();
-    
+
     if (!audioRef.current) return;
 
     if (isPlaying) {
@@ -66,7 +59,7 @@ export default function MusicPlayer() {
       audioRef.current.play();
       setIsPlaying(true);
     }
-    hasInteracted.current = true; 
+    hasInteracted.current = true;
   }, [isPlaying]);
 
   return (
@@ -77,8 +70,8 @@ export default function MusicPlayer() {
       aria-label="Music player"
       className="fixed bottom-8 right-8 z-50 flex items-center bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-full overflow-hidden cursor-pointer"
       initial={{ borderRadius: 50 }}
-      animate={{ 
-        width: isHovered ? 240 : 56, 
+      animate={{
+        width: isHovered ? 240 : 56,
         height: 56,
         paddingLeft: isHovered ? 8 : 0,
         paddingRight: isHovered ? 8 : 0
@@ -93,7 +86,7 @@ export default function MusicPlayer() {
 
       <AnimatePresence>
         {isHovered && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
@@ -104,7 +97,7 @@ export default function MusicPlayer() {
               <span className="text-xs font-bold text-zinc-900 truncate">Now Playing</span>
               <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider truncate">Gallery Vibes</span>
             </div>
-            
+
             <button
               onClick={toggleMusic}
               aria-label={isPlaying ? 'Pause music' : 'Play music'}
