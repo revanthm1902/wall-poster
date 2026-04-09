@@ -26,10 +26,7 @@ const THEME_STYLES: Record<ThemeType, ThemeStyle> = {
   lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' },
 };
 
-/* ─── MINIMUM PRELOADER DISPLAY ─── */
-const MIN_LOADER_MS = 1800;
-
-/* ─── AESTHETIC LOADER ─── */
+const MIN_LOADER_MS = 600;
 const AestheticLoader = ({ progress }: { progress: number }) => {
   return (
     <motion.div
@@ -37,7 +34,7 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, filter: "blur(8px)", scale: 1.04 }}
       transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
+      className="fixed inset-0 z-200 flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
     >
       <div
         className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none"
@@ -52,9 +49,9 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
             Preparing your Wall...
           </h1>
         </motion.div>
-        <div className="w-48 h-[2px] bg-zinc-800 rounded-full overflow-hidden">
+        <div className="w-48 h-0.5 bg-zinc-800 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-zinc-400 to-zinc-200 rounded-full"
+            className="h-full bg-linear-to-r from-zinc-400 to-zinc-200 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4, ease: "easeOut" }}
@@ -89,13 +86,11 @@ export default function WallCalendar() {
   const wallPosterRef = useRef<WallPosterHandle>(null);
   const initialLoadDone = useRef(false);
 
-  // ─── RESTORE CUSTOM IMAGE FROM LOCALSTORAGE ───
   useEffect(() => {
     const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
     if (savedCustomImage) setCustomImage(savedCustomImage);
   }, []);
 
-  // ─── PERSIST CUSTOM IMAGE TO LOCALSTORAGE ───
   useEffect(() => {
     if (customImage) {
       try {
@@ -108,7 +103,6 @@ export default function WallCalendar() {
     }
   }, [customImage]);
 
-  // ─── ASSET PRELOADER (runs once on mount, with real progress tracking) ───
   useEffect(() => {
     if (initialLoadDone.current) return;
     initialLoadDone.current = true;
@@ -117,12 +111,14 @@ export default function WallCalendar() {
 
     const loadAssets = async () => {
       const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
-      const allImagesToPreload = savedCustomImage
-        ? [...monthImages, savedCustomImage]
-        : monthImages;
+      const currentMonthIndex = new Date().getMonth();
+      const currentMonthImage = monthImages[currentMonthIndex];
+      
+      const priorityImages = savedCustomImage 
+        ? [savedCustomImage]
+        : [currentMonthImage];
 
-      // All assets: images + video + audio
-      const totalAssets = allImagesToPreload.length + 2; // +1 video, +1 audio
+      const totalAssets = priorityImages.length + 2;
       let loadedCount = 0;
 
       const updateProgress = () => {
@@ -130,43 +126,57 @@ export default function WallCalendar() {
         setLoadProgress(Math.round((loadedCount / totalAssets) * 100));
       };
 
-      const imagePromises = allImagesToPreload.map(src =>
+      const imagePromises = priorityImages.map(src =>
         new Promise<void>(resolve => {
           const img = new window.Image();
           img.src = src;
-          img.onload = () => { updateProgress(); resolve(); };
-          img.onerror = () => { updateProgress(); resolve(); };
+
+          const timer = setTimeout(() => { updateProgress(); resolve(); }, 2000);
+          img.onload = () => { clearTimeout(timer); updateProgress(); resolve(); };
+          img.onerror = () => { clearTimeout(timer); updateProgress(); resolve(); };
         })
       );
 
       const videoPromise = new Promise<void>(resolve => {
         const vid = document.createElement('video');
-        vid.preload = 'auto';
+        vid.preload = 'metadata';
         vid.src = "/video.mp4";
-        vid.onloadeddata = () => { updateProgress(); resolve(); };
-        vid.onerror = () => { updateProgress(); resolve(); };
+        const timer = setTimeout(() => { updateProgress(); resolve(); }, 2000);
+        vid.onloadedmetadata = () => { clearTimeout(timer); updateProgress(); resolve(); };
+        vid.onerror = () => { clearTimeout(timer); updateProgress(); resolve(); };
         vid.load();
       });
 
       const audioPromise = new Promise<void>(resolve => {
         const aud = new Audio();
-        aud.preload = 'auto';
+        aud.preload = 'metadata';
         aud.src = "/song.mp3";
-        aud.oncanplaythrough = () => { updateProgress(); resolve(); };
-        aud.onerror = () => { updateProgress(); resolve(); };
+        const timer = setTimeout(() => { updateProgress(); resolve(); }, 2000);
+        aud.onloadedmetadata = () => { clearTimeout(timer); updateProgress(); resolve(); };
+        aud.onerror = () => { clearTimeout(timer); updateProgress(); resolve(); };
         aud.load();
       });
 
-      await Promise.all([...imagePromises, videoPromise, audioPromise]);
+      const backgroundImages = monthImages.filter(img => img !== currentMonthImage);
+      backgroundImages.forEach(src => {
+        const img = new window.Image();
+        img.src = src;
+      });
+
+      const timeoutPromise = new Promise<void>(resolve => setTimeout(resolve, 3000));
+
+      await Promise.race([
+        Promise.all([...imagePromises, videoPromise, audioPromise]),
+        timeoutPromise
+      ]);
     };
 
     loadAssets().then(() => {
-      // Enforce minimum display time so preloader doesn't just flash
       const elapsed = performance.now() - loadStart;
       const remaining = Math.max(0, MIN_LOADER_MS - elapsed);
       setTimeout(() => setIsLoading(false), remaining);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const nextMonth = useCallback(() => {
     audio.playPaperFlip();
@@ -208,14 +218,11 @@ export default function WallCalendar() {
 
   return (
     <>
-      {/* ─── PRELOADER (covers everything with z-200) ─── */}
       <AnimatePresence mode="wait">
         {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
 
       <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
-
-        {/* BACKGROUND VIDEO — always mounted so it starts buffering */}
         <video
           src="/video.mp4"
           autoPlay
@@ -226,7 +233,6 @@ export default function WallCalendar() {
           className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-[3px]"
         />
 
-        {/* Everything below fades in after loading completes */}
         <AnimatePresence>
           {!isLoading && (
             <>
@@ -251,7 +257,7 @@ export default function WallCalendar() {
                 ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
               />
 
-              {/* WALL POSTER — drops from top with spring animation */}
+              {/* WALL POSTER — drops from top */}
               <WallPoster
                 ref={wallPosterRef}
                 currentDate={currentDate}
