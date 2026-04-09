@@ -37,7 +37,7 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, filter: "blur(8px)", scale: 1.04 }}
       transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
+      className="fixed inset-0 z-200 flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
     >
       <div
         className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none"
@@ -52,9 +52,9 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
             Preparing your Wall...
           </h1>
         </motion.div>
-        <div className="w-48 h-[2px] bg-zinc-800 rounded-full overflow-hidden">
+        <div className="w-48 h-0.5 bg-zinc-800 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-zinc-400 to-zinc-200 rounded-full"
+            className="h-full bg-linear-to-r from-zinc-400 to-zinc-200 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4, ease: "easeOut" }}
@@ -225,7 +225,7 @@ export default function WallCalendar() {
         {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
 
-      <main className="w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
+      <main className="w-screen h-dvh overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
         <video
           src="/video.mp4"
           autoPlay
