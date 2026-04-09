@@ -18,43 +18,63 @@ const monthImages = [
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-// --- THE AESTHETIC LOADER COMPONENT ---
-const LoadingScreen = () => (
-  <motion.div 
-    key="loader"
-    initial={{ opacity: 1 }}
-    exit={{ opacity: 0, filter: "blur(10px)" }}
-    transition={{ duration: 1, ease: "easeInOut" }}
-    className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0a0a0a] text-white"
-  >
-    <div className="flex flex-col items-center gap-8">
-      {/* Abstract Spinning Ring */}
-      <div className="relative flex items-center justify-center w-20 h-20">
-        <motion.div 
-          animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-0 border-[1px] border-zinc-800 border-t-amber-500 rounded-full"
-        />
-        <motion.div 
-          animate={{ rotate: -360 }} transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-2 border-[1px] border-zinc-800 border-b-zinc-500 rounded-full opacity-50"
-        />
-      </div>
+// --- THE AESTHETIC GALLERY LOADER ---
+const AestheticLoader = () => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const duration = 3000; // Force 3 seconds minimum
+    const startTime = performance.now();
+    
+    const animate = (time: number) => {
+      const elapsed = time - startTime;
+      const p = Math.min(elapsed / duration, 1);
+      // Extremely smooth, slow-easing curve
+      const easeProgress = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
       
-      {/* Typography & Progress Line */}
-      <div className="flex flex-col items-center gap-3">
-        <h2 className="text-xs font-black uppercase tracking-[0.4em] text-zinc-400">
-          Loading Your Wall Poster
-        </h2>
+      setProgress(easeProgress * 100);
+      
+      if (p < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, []);
+
+  return (
+    <motion.div 
+      key="loader"
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+      transition={{ duration: 1.5, ease: "easeInOut" }}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
+    >
+      {/* Subtle digital paper noise for texture */}
+      <div 
+        className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none" 
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} 
+      />
+
+      <div className="relative z-10 flex flex-col items-center gap-6">
+        {/* Soft, breathing text */}
         <motion.div 
-          initial={{ width: 0, opacity: 0 }} 
-          animate={{ width: "100%", opacity: 1 }} 
-          transition={{ duration: 3, ease: "easeInOut" }}
-          className="h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent w-full max-w-[150px]"
-        />
+          animate={{ opacity: [0.4, 1, 0.4] }} 
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <h1 className="text-sm md:text-base font-serif italic tracking-[0.3em] text-zinc-300 font-light">
+            Preparing your space...
+          </h1>
+        </motion.div>
+
+        {/* Minimalist, razor-thin loading line */}
+        <div className="w-[160px] h-[1px] bg-zinc-800 overflow-hidden">
+          <motion.div
+            className="h-full bg-zinc-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 export default function WallCalendar() {
   const [isLoading, setIsLoading] = useState(true);
@@ -72,19 +92,38 @@ export default function WallCalendar() {
 
   const posterRef = useRef<HTMLDivElement>(null);
 
-  // --- THE MASTER ASSET PRELOADER ---
+  // 1. LOAD CUSTOM IMAGE FROM MEMORY ON BOOT
   useEffect(() => {
-    // 1. Minimum 3-second aesthetic timer
+    const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
+    if (savedCustomImage) setCustomImage(savedCustomImage);
+  }, []);
+
+  // 2. AUTO-SAVE CUSTOM IMAGE TO MEMORY
+  useEffect(() => {
+    if (customImage) {
+      try {
+        localStorage.setItem('wall_cal_custom_image', customImage);
+      } catch (e) {
+        console.error("Storage full! Couldn't save custom image.");
+      }
+    } else {
+      localStorage.removeItem('wall_cal_custom_image');
+    }
+  }, [customImage]);
+
+  // 3. THE MASTER PRELOADER ENGINE
+  useEffect(() => {
     const minTimer = new Promise(resolve => setTimeout(resolve, 3000));
 
-    // 2. Heavy Asset Downloader
     const loadAssets = async () => {
-      const imagePromises = monthImages.map(src => {
+      const allImagesToPreload = customImage ? [...monthImages, customImage] : monthImages;
+      
+      const imagePromises = allImagesToPreload.map(src => {
         return new Promise(resolve => {
           const img = new window.Image();
           img.src = src;
           img.onload = resolve;
-          img.onerror = resolve; // Resolve on error so app doesn't hang forever if 1 image fails
+          img.onerror = resolve; 
         });
       });
 
@@ -99,11 +138,10 @@ export default function WallCalendar() {
       await Promise.all([...imagePromises, videoPromise]);
     };
 
-    // 3. Race condition: Wait for BOTH the 3 seconds AND the heavy downloads to finish
     Promise.all([minTimer, loadAssets()]).then(() => {
       setIsLoading(false);
     });
-  }, []);
+  }, [customImage]);
 
   const nextMonth = () => { audio.playPaperFlip(); setDirection(1); setCurrentDate(prev => addMonths(prev, 1)); };
   const prevMonth = () => { audio.playPaperFlip(); setDirection(-1); setCurrentDate(prev => subMonths(prev, 1)); };
@@ -177,12 +215,10 @@ export default function WallCalendar() {
 
   return (
     <>
-      {/* THE LOADING GATE */}
       <AnimatePresence mode="wait">
-        {isLoading && <LoadingScreen />}
+        {isLoading && <AestheticLoader />}
       </AnimatePresence>
 
-      {/* THE MAIN APP (Rendered underneath, but hidden until loader exits) */}
       <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
         
         <style dangerouslySetInnerHTML={{__html: `
@@ -208,88 +244,96 @@ export default function WallCalendar() {
           ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={exportPoster}
         />
 
-        <motion.div
-          onMouseMove={handleMouseMove} onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
-          style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-          className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
-        >
-          
-          <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-1 z-20" />
-          <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-2 z-20" />
+        {/* --- THE PHYSICAL DROP PHYSICS --- */}
+        <AnimatePresence>
+          {!isLoading && (
+            <motion.div
+              onMouseMove={handleMouseMove} onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
+              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+              initial={{ y: "-120vh", opacity: 0, rotateZ: 2 }} // Starts way off screen, slightly tilted
+              animate={{ y: 0, opacity: 1, rotateZ: 0 }}      // Drops down and levels out
+              transition={{ type: "spring", stiffness: 45, damping: 14, mass: 1.5, delay: 0.1 }} // Heavy, realistic physics
+              className="relative w-full max-w-6xl h-full max-h-[900px] flex items-center justify-center cursor-default z-10"
+            >
+              
+              <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-1 z-20" />
+              <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-[2000px] rope-texture rope-sway-2 z-20" />
 
-          <div ref={posterRef} style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)", backgroundColor: activeTheme.bgColorHex }} className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}>
-            
-            <div className="absolute top-6 left-[30%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
-               <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-[2px]" />
-            </div>
-            <div className="absolute top-6 left-[70%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
-               <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-[65deg] translate-y-[2px]" />
-            </div>
+              <div ref={posterRef} style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.7) inset, 0 40px 80px -20px rgba(0,0,0,0.6)", backgroundColor: activeTheme.bgColorHex }} className={`relative w-full h-full rounded-2xl flex flex-col xl:flex-row overflow-hidden ${fontStyle}`}>
+                
+                <div className="absolute top-6 left-[30%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
+                   <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-45 translate-y-[2px]" />
+                </div>
+                <div className="absolute top-6 left-[70%] -translate-x-1/2 w-6 h-6 bg-[#0a0a0a] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,1)] z-30 flex items-center justify-center border border-white/10">
+                   <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-[65deg] translate-y-[2px]" />
+                </div>
 
-            <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 flex-shrink-0">
-               <AnimatePresence mode="popLayout">
-                 <motion.img key={heroImage} initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 0.9, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} src={heroImage} crossOrigin="anonymous" className="absolute inset-0 w-full h-full object-cover" />
-               </AnimatePresence>
-               <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { audio.playClick(); setIsTimeWarpOpen(true); }} className="pointer-events-auto cursor-pointer inline-block group/warp">
-                    <h1 className="text-white text-6xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-xl group-hover/warp:text-amber-200 transition-colors">{format(currentDate, 'MMM')}</h1>
-                    <div className="flex items-center gap-3">
-                      <p className="text-white/90 text-2xl xl:text-3xl font-bold tracking-widest uppercase mt-2 group-hover/warp:text-amber-200/80 transition-colors">{format(currentDate, 'yyyy')}</p>
-                    </div>
-                  </motion.div>
-               </div>
-               <AnimatePresence>
-                 {isTimeWarpOpen && (
-                   <motion.div initial={{ opacity: 0, backdropFilter: "blur(0px)" }} animate={{ opacity: 1, backdropFilter: "blur(16px)" }} exit={{ opacity: 0, backdropFilter: "blur(0px)" }} className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center p-8 pointer-events-auto">
-                     <button onClick={() => { audio.playClick(); setIsTimeWarpOpen(false); }} className="absolute top-6 right-6 p-2 text-white/50 hover:text-white bg-black/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-                     <div className="flex items-center gap-4 mb-8">
-                       <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear - 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronLeft /></button>
-                       <span className="text-4xl font-bold text-white tracking-widest">{currentYear}</span>
-                       <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear + 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronRight /></button>
+                <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 flex-shrink-0">
+                   <AnimatePresence mode="popLayout">
+                     <motion.img key={heroImage} initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 0.9, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} src={heroImage} crossOrigin="anonymous" className="absolute inset-0 w-full h-full object-cover" />
+                   </AnimatePresence>
+                   <div className="absolute inset-0 bg-gradient-to-t xl:bg-gradient-to-r from-black/60 via-black/10 to-transparent flex flex-col justify-end xl:justify-center p-8 xl:p-12 z-10 pointer-events-none">
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { audio.playClick(); setIsTimeWarpOpen(true); }} className="pointer-events-auto cursor-pointer inline-block group/warp">
+                        <h1 className="text-white text-6xl xl:text-8xl font-black tracking-tighter uppercase drop-shadow-xl group-hover/warp:text-amber-200 transition-colors">{format(currentDate, 'MMM')}</h1>
+                        <div className="flex items-center gap-3">
+                          <p className="text-white/90 text-2xl xl:text-3xl font-bold tracking-widest uppercase mt-2 group-hover/warp:text-amber-200/80 transition-colors">{format(currentDate, 'yyyy')}</p>
+                        </div>
+                      </motion.div>
+                   </div>
+                   <AnimatePresence>
+                     {isTimeWarpOpen && (
+                       <motion.div initial={{ opacity: 0, backdropFilter: "blur(0px)" }} animate={{ opacity: 1, backdropFilter: "blur(16px)" }} exit={{ opacity: 0, backdropFilter: "blur(0px)" }} className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center p-8 pointer-events-auto">
+                         <button onClick={() => { audio.playClick(); setIsTimeWarpOpen(false); }} className="absolute top-6 right-6 p-2 text-white/50 hover:text-white bg-black/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                         <div className="flex items-center gap-4 mb-8">
+                           <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear - 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronLeft /></button>
+                           <span className="text-4xl font-bold text-white tracking-widest">{currentYear}</span>
+                           <button onClick={() => { audio.playClick(); setCurrentDate(setYear(currentDate, currentYear + 1)); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronRight /></button>
+                         </div>
+                         <div className="grid grid-cols-3 gap-3 w-full max-w-[300px]">
+                           {MONTH_NAMES.map((m, idx) => (
+                             <button key={m} onClick={() => { audio.playPaperFlip(); setCurrentDate(setMonth(currentDate, idx)); setIsTimeWarpOpen(false); }} className={`py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all ${currentMonthIndex === idx ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}>{m}</button>
+                           ))}
+                         </div>
+                       </motion.div>
+                     )}
+                   </AnimatePresence>
+                </div>
+
+                <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-10 ${activeTheme.bg} ${activeTheme.text}`}>
+                   <div className="absolute top-0 right-full w-[60px] xl:w-[120px] h-full hidden xl:block z-0 pointer-events-none">
+                     <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={wavePath} /></svg>
+                     <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")', maskImage: waveMaskImage, WebkitMaskImage: waveMaskImage, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
+                   </div>
+                   <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
+
+                   <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
+                     <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">The Itinerary</h2>
+                     <div className="flex gap-3 relative z-50">
+                       <motion.button whileTap={{ scale: 0.85 }} onClick={prevMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronLeft className="w-5 h-5" /></motion.button>
+                       <motion.button whileTap={{ scale: 0.85 }} onClick={nextMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronRight className="w-5 h-5" /></motion.button>
                      </div>
-                     <div className="grid grid-cols-3 gap-3 w-full max-w-[300px]">
-                       {MONTH_NAMES.map((m, idx) => (
-                         <button key={m} onClick={() => { audio.playPaperFlip(); setCurrentDate(setMonth(currentDate, idx)); setIsTimeWarpOpen(false); }} className={`py-3 rounded-xl font-bold text-sm tracking-wider uppercase transition-all ${currentMonthIndex === idx ? 'bg-amber-400 text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}>{m}</button>
-                       ))}
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-            </div>
-
-            <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-10 ${activeTheme.bg} ${activeTheme.text}`}>
-               <div className="absolute top-0 right-full w-[60px] xl:w-[120px] h-full hidden xl:block z-0 pointer-events-none">
-                 <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={wavePath} /></svg>
-                 <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")', maskImage: waveMaskImage, WebkitMaskImage: waveMaskImage, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
-               </div>
-               <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
-
-               <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
-                 <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">Wall Poster</h2>
-                 <div className="flex gap-3 relative z-50">
-                   <motion.button whileTap={{ scale: 0.85 }} onClick={prevMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronLeft className="w-5 h-5" /></motion.button>
-                   <motion.button whileTap={{ scale: 0.85 }} onClick={nextMonth} className="p-2 rounded-full hover:bg-black/5 transition-colors"><ChevronRight className="w-5 h-5" /></motion.button>
-                 </div>
-               </div>
-               
-               <div className="flex-1 relative z-20 w-full min-h-0">
-                 <AnimatePresence custom={direction} mode="wait">
-                   <motion.div
-                     key={currentDate.toISOString()} custom={direction}
-                     initial={{ rotateY: direction > 0 ? 90 : -90, opacity: 0, scale: 0.95 }}
-                     animate={{ rotateY: 0, opacity: 1, scale: 1 }}
-                     exit={{ rotateY: direction < 0 ? 90 : -90, opacity: 0, scale: 0.95 }}
-                     transition={{ duration: 0.35, ease: "easeInOut" }}
-                     style={{ transformOrigin: direction > 0 ? "left center" : "right center" }}
-                     className="absolute inset-0 w-full h-full"
-                   >
-                     <CalendarGrid currentDate={currentDate} />
-                   </motion.div>
-                 </AnimatePresence>
-               </div>
-            </div>
-          </div>
-        </motion.div>
+                   </div>
+                   
+                   <div className="flex-1 relative z-20 w-full min-h-0">
+                     <AnimatePresence custom={direction} mode="wait">
+                       <motion.div
+                         key={currentDate.toISOString()} custom={direction}
+                         initial={{ rotateY: direction > 0 ? 90 : -90, opacity: 0, scale: 0.95 }}
+                         animate={{ rotateY: 0, opacity: 1, scale: 1 }}
+                         exit={{ rotateY: direction < 0 ? 90 : -90, opacity: 0, scale: 0.95 }}
+                         transition={{ duration: 0.35, ease: "easeInOut" }}
+                         style={{ transformOrigin: direction > 0 ? "left center" : "right center" }}
+                         className="absolute inset-0 w-full h-full"
+                       >
+                         <CalendarGrid currentDate={currentDate} />
+                       </motion.div>
+                     </AnimatePresence>
+                   </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <MusicPlayer />
       </main>
