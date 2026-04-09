@@ -3,3 +3,42 @@
 body {
   background-color: #e5e5e5;
 }
+
+/* ─── ROPE TEXTURE & SWING ANIMATIONS ─────────────────────────────────────── */
+/* Moved from inline <style dangerouslySetInnerHTML> for proper CSS caching    */
+
+.rope-texture {
+  background-color: #cda47b;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.25) 2px,
+    rgba(0, 0, 0, 0.25) 4px
+  );
+  box-shadow:
+    inset 2px 0 3px rgba(0, 0, 0, 0.6),
+    inset -1px 0 2px rgba(255, 255, 255, 0.3);
+}
+
+@keyframes sway1 {
+  0%, 100% { transform: rotate(-1deg); }
+  50%      { transform: rotate(1deg); }
+}
+
+@keyframes sway2 {
+  0%, 100% { transform: rotate(0.8deg); }
+  50%      { transform: rotate(-1.2deg); }
+}
+
+.rope-sway-1 {
+  transform-origin: bottom center;
+  animation: sway1 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+.rope-sway-2 {
+  transform-origin: bottom center;
+  animation: sway2 4.5s ease-in-out infinite 0.5s;
+  will-change: transform;
+}
