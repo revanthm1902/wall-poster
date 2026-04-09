@@ -8,25 +8,18 @@ import {
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- CUSTOM CONFETTI PARTICLE ENGINE ---
+type SavedRange = { id: string; start: string; end: string; note: string };
+
 const ConfettiBurst = () => {
   const colors = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6'];
   return (
     <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center">
-      {Array.from({ length: 45 }).map((_, i) => (
+      {Array.from({ length: 40 }).map((_, i) => (
         <motion.div
-          key={i}
-          initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
-          animate={{
-            x: (Math.random() - 0.5) * 600,
-            y: (Math.random() - 0.5) * 600,
-            scale: Math.random() * 1.5,
-            opacity: 0,
-            rotate: Math.random() * 360
-          }}
+          key={i} initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+          animate={{ x: (Math.random() - 0.5) * 600, y: (Math.random() - 0.5) * 600, scale: Math.random() * 1.5, opacity: 0, rotate: Math.random() * 360 }}
           transition={{ duration: 1 + Math.random() * 1.5, ease: "easeOut" }}
-          className="absolute w-2 h-2 rounded-sm shadow-sm"
-          style={{ backgroundColor: colors[Math.floor(Math.random() * colors.length)] }}
+          className="absolute w-2 h-2 rounded-sm shadow-sm" style={{ backgroundColor: colors[Math.floor(Math.random() * colors.length)] }}
         />
       ))}
     </div>
@@ -37,53 +30,68 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
-  
-  // Data States
-  const [rangeNote, setRangeNote] = useState("");
-  const [singleNotes, setSingleNotes] = useState<Record<string, string>>({});
-  
-  // Input State (Temporary state before hitting "Save")
   const [inputText, setInputText] = useState("");
   
-  // Interaction States
+  const [singleNotes, setSingleNotes] = useState<Record<string, string>>({});
+  const [monthNotes, setMonthNotes] = useState<Record<string, string>>({});
+  const [savedRanges, setSavedRanges] = useState<SavedRange[]>([]);
+  
   const [showConfetti, setShowConfetti] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  // LOAD FROM BROWSER MEMORY
+  // LOAD MEMORY
   useEffect(() => {
-    const savedStart = localStorage.getItem('wall_cal_start');
-    const savedEnd = localStorage.getItem('wall_cal_end');
-    const savedRangeNote = localStorage.getItem('wall_cal_range_note');
-    const savedSingleNotes = localStorage.getItem('wall_cal_single_notes');
+    const sSingle = localStorage.getItem('cal_single_notes');
+    const sMonth = localStorage.getItem('cal_month_notes');
+    const sRanges = localStorage.getItem('cal_ranges');
     
-    if (savedStart) setStartDate(new Date(savedStart));
-    if (savedEnd) setEndDate(new Date(savedEnd));
-    if (savedRangeNote) setRangeNote(savedRangeNote);
-    if (savedSingleNotes) setSingleNotes(JSON.parse(savedSingleNotes));
+    if (sSingle) setSingleNotes(JSON.parse(sSingle));
+    if (sMonth) setMonthNotes(JSON.parse(sMonth));
+    if (sRanges) setSavedRanges(JSON.parse(sRanges));
     
     setIsLoaded(true);
   }, []);
 
-  // Update input text when selection changes
+  // AUTO-SAVE MEMORY
+  useEffect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('cal_single_notes', JSON.stringify(singleNotes));
+    localStorage.setItem('cal_month_notes', JSON.stringify(monthNotes));
+    localStorage.setItem('cal_ranges', JSON.stringify(savedRanges));
+  }, [singleNotes, monthNotes, savedRanges, isLoaded]);
+
+  // UPDATE INPUT CONTEXT
   useEffect(() => {
     setIsSaved(false);
-    if (startDate && endDate) {
-      setInputText(rangeNote);
-    } else if (startDate && !endDate) {
-      const dateKey = format(startDate, 'yyyy-MM-dd');
-      setInputText(singleNotes[dateKey] || "");
+    if (startDate && !endDate) {
+      setInputText(singleNotes[format(startDate, 'yyyy-MM-dd')] || "");
+    } else if (!startDate && !endDate) {
+      setInputText(monthNotes[format(currentDate, 'yyyy-MM')] || "");
     } else {
       setInputText("");
     }
-  }, [startDate, endDate, rangeNote, singleNotes]);
+  }, [startDate, endDate, currentDate, singleNotes, monthNotes]);
+
+  // GLOBAL ESCAPE KEY LISTENER FOR GRID
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setStartDate(null);
+        setEndDate(null);
+        setHoverDate(null);
+        setInputText("");
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDateGrid = startOfWeek(monthStart);
   const endDateGrid = endOfWeek(monthEnd);
   const days = eachDayOfInterval({ start: startDateGrid, end: endDateGrid });
-  const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   const onDateClick = (day: Date) => {
     if (!isSameMonth(day, monthStart)) return;
@@ -92,7 +100,6 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
       if (isBefore(day, startDate)) {
         setStartDate(day); 
       } else if (isSameDay(day, startDate)) {
-        // Unselect if clicked again
         setStartDate(null);
       } else {
         setEndDate(day);
@@ -105,80 +112,119 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
     }
   };
 
-  // EXPLICIT SAVE ACTION
-  const handleSave = () => {
-    if (startDate && endDate) {
-      setRangeNote(inputText);
-      localStorage.setItem('wall_cal_start', startDate.toISOString());
-      localStorage.setItem('wall_cal_end', endDate.toISOString());
-      localStorage.setItem('wall_cal_range_note', inputText);
-    } else if (startDate && !endDate) {
-      const dateKey = format(startDate, 'yyyy-MM-dd');
-      const newNotes = { ...singleNotes, [dateKey]: inputText };
-      setSingleNotes(newNotes);
-      localStorage.setItem('wall_cal_start', startDate.toISOString());
-      localStorage.removeItem('wall_cal_end');
-      localStorage.setItem('wall_cal_single_notes', JSON.stringify(newNotes));
+  // EXPLICIT SAVE & DISMISS WORKFLOW
+  const handleSaveRange = () => {
+    if (!startDate || !endDate || !inputText.trim()) return;
+    const newRange: SavedRange = {
+      id: Math.random().toString(36).substring(2, 9),
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
+      note: inputText
+    };
+    setSavedRanges(prev => [...prev, newRange]);
+    
+    // Clear visual selection immediately after saving
+    setStartDate(null); setEndDate(null); setInputText(""); setHoverDate(null);
+  };
+
+  const handleSaveSingle = () => {
+    if (!startDate) return;
+    const key = format(startDate, 'yyyy-MM-dd');
+    if (!inputText.trim()) {
+       const newNotes = {...singleNotes};
+       delete newNotes[key];
+       setSingleNotes(newNotes);
+    } else {
+       setSingleNotes(prev => ({ ...prev, [key]: inputText }));
     }
     
+    // Show brief saved state, then dismiss
+    setIsSaved(true);
+    setTimeout(() => {
+      setIsSaved(false);
+      setStartDate(null); setEndDate(null); setInputText(""); setHoverDate(null);
+    }, 400);
+  };
+
+  const handleSaveMonth = () => {
+    const key = format(currentDate, 'yyyy-MM');
+    if (!inputText.trim()) {
+       const newNotes = {...monthNotes};
+       delete newNotes[key];
+       setMonthNotes(newNotes);
+    } else {
+       setMonthNotes(prev => ({ ...prev, [key]: inputText }));
+    }
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
 
-  const clearSelection = () => {
-    setStartDate(null); setEndDate(null); setHoverDate(null); setInputText("");
-    localStorage.removeItem('wall_cal_start');
-    localStorage.removeItem('wall_cal_end');
+  const deleteRange = (id: string) => setSavedRanges(prev => prev.filter(r => r.id !== id));
+  
+  const deleteSingleNote = () => {
+    if (!startDate) return;
+    const key = format(startDate, 'yyyy-MM-dd');
+    const newNotes = {...singleNotes};
+    delete newNotes[key];
+    setSingleNotes(newNotes);
+    setInputText("");
+    setStartDate(null); // Dismiss after delete
   };
+
+  const deleteMonthNote = () => {
+    const key = format(currentDate, 'yyyy-MM');
+    const newNotes = {...monthNotes};
+    delete newNotes[key];
+    setMonthNotes(newNotes);
+    setInputText("");
+  };
+
+  const activeOverlappingRanges = startDate && !endDate 
+    ? savedRanges.filter(r => isWithinInterval(startDate, { start: new Date(r.start), end: new Date(r.end) }))
+    : [];
 
   return (
     <div className="w-full h-full flex flex-col pointer-events-auto relative">
-      
       {showConfetti && <ConfettiBurst />}
 
-      {/* Weekday Headers */}
       <div className="grid grid-cols-7 mb-4">
-        {weekDays.map(day => (
+        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
           <div key={day} className="text-center text-[10px] font-bold tracking-widest text-inherit/40">{day}</div>
         ))}
       </div>
 
-      {/* FLAWLESS PILL CALENDAR GRID */}
-      <div className="grid grid-cols-7 gap-y-2 relative">
+      {/* THE HOVER BLEED FIX: onMouseLeave added here! */}
+      <div className="grid grid-cols-7 gap-y-2 relative" onMouseLeave={() => setHoverDate(null)}>
         {days.map((day) => {
           const isCurrentMonth = isSameMonth(day, monthStart);
           const isStart = startDate && isSameDay(day, startDate);
           const isEnd = endDate && isSameDay(day, endDate);
           const isMiddle = startDate && endDate && isWithinInterval(day, { start: startDate, end: endDate }) && !isStart && !isEnd;
           const isHoverMiddle = startDate && !endDate && hoverDate && isAfter(hoverDate, startDate) && isWithinInterval(day, { start: startDate, end: hoverDate }) && !isStart;
-          const isTodayDate = isToday(day);
           
-          const dateKey = format(day, 'yyyy-MM-dd');
-          const hasSingleNote = singleNotes[dateKey] && singleNotes[dateKey].trim() !== '';
+          const hasSingleNote = singleNotes[format(day, 'yyyy-MM-dd')];
+          const hasPhantomRange = savedRanges.some(r => isWithinInterval(day, { start: new Date(r.start), end: new Date(r.end) }));
 
           return (
             <div key={day.toISOString()} onMouseEnter={() => setHoverDate(day)} className="relative flex justify-center items-center h-10 w-full">
               {isCurrentMonth ? (
                 <>
-                  {/* PERFECT GEOMETRY CONNECTOR BARS (No Gaps) */}
                   {(isMiddle || isHoverMiddle) && <div className="absolute inset-y-0 left-0 right-0 bg-black/10 z-0" />}
                   {isStart && (endDate || (hoverDate && isAfter(hoverDate, startDate))) && <div className="absolute inset-y-0 right-0 w-1/2 bg-black/10 z-0" />}
                   {isEnd && <div className="absolute inset-y-0 left-0 w-1/2 bg-black/10 z-0" />}
 
-                  {/* DATE BUBBLE */}
-                  <div 
-                    onClick={() => onDateClick(day)} 
-                    className={`relative z-10 flex flex-col items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-200
+                  <div onClick={() => onDateClick(day)} className={`relative z-10 flex flex-col items-center justify-center w-10 h-10 rounded-full cursor-pointer transition-all duration-200
                       ${isStart || isEnd ? 'bg-zinc-900 text-white shadow-md scale-105' : 'hover:bg-black/5 text-inherit'}
-                      ${isTodayDate && !isStart && !isEnd ? 'border-2 border-amber-500 text-amber-600 font-bold' : 'font-medium'}
+                      ${isToday(day) && !isStart && !isEnd ? 'border-2 border-amber-500 text-amber-600 font-bold' : 'font-medium'}
                     `}
                   >
                     <span>{format(day, 'd')}</span>
                     
-                    {/* The Note Indicator Dot */}
-                    {hasSingleNote && !isStart && !isEnd && (
-                      <div className="absolute bottom-1 w-1 h-1 bg-amber-500 rounded-full shadow-sm" />
-                    )}
+                    {/* Visual Memory Dots */}
+                    <div className="absolute bottom-[2px] flex gap-1">
+                      {hasPhantomRange && !isStart && !isEnd && <div className="w-1 h-1 bg-inherit/30 rounded-full" />}
+                      {hasSingleNote && !isStart && !isEnd && <div className="w-1 h-1 bg-amber-500 rounded-full shadow-sm" />}
+                    </div>
                   </div>
                 </>
               ) : (
@@ -189,58 +235,85 @@ export default function CalendarGrid({ currentDate }: { currentDate: Date }) {
         })}
       </div>
 
-      {/* EDITABLE NOTE & SAVE UI */}
-      <div className="mt-auto pt-6 flex items-end justify-between min-h-[80px]">
+      {/* --- LAYERED MEMORY UI --- */}
+      <div className="mt-auto pt-6 flex flex-col gap-3 min-h-[120px]">
         <AnimatePresence mode="wait">
           
-          {/* Note Editor (Visible only when something is selected) */}
-          {startDate && (
-            <motion.div key="editor" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="flex flex-col flex-1 pr-8 border-t border-inherit/10 pt-4">
+          {/* STATE 1: RANGE SELECTED */}
+          {startDate && endDate && (
+            <motion.div key="range-edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="flex flex-col border-t border-inherit/10 pt-4">
+              <span className="text-[10px] font-bold text-inherit/40 uppercase tracking-widest mb-2">New Event Range</span>
               <div className="flex items-center gap-4 w-full mb-1">
                 <input 
-                  type="text" 
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 hover:border-inherit/50 focus:border-inherit/80 transition-colors pb-1 placeholder-inherit/30"
-                  placeholder={endDate ? "ADD RANGE NOTE (E.G. BALI TRIP)..." : "ADD NOTE FOR THIS DAY..."}
+                  type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
+                  className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30"
+                  placeholder="E.G., SUMMER HACKATHON..."
                 />
-                
-                {/* EXPLICIT SAVE BUTTON */}
-                <button 
-                  onClick={handleSave} 
-                  className={`text-[10px] font-bold px-3 py-1 rounded-sm uppercase tracking-wider transition-all border
-                    ${isSaved ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-inherit/5 text-inherit hover:bg-inherit/10 border-transparent'}
-                  `}
-                >
-                  {isSaved ? "Saved!" : "Save"}
-                </button>
+                <button onClick={handleSaveRange} className="text-[10px] font-bold px-4 py-1.5 bg-zinc-900 text-white rounded-sm uppercase tracking-wider hover:bg-zinc-800 transition-colors shadow-sm">Save Range</button>
               </div>
-              
-              <span className="text-sm font-semibold text-inherit/70">
-                {format(startDate, 'MMM d')} 
-                {endDate ? ` - ${format(endDate, 'MMM d')} (${Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24))} days)` : ''}
-              </span>
+              <span className="text-xs font-semibold text-inherit/60">{format(startDate, 'MMM d')} - {format(endDate, 'MMM d')}</span>
             </motion.div>
           )}
-          
-          {/* Minimalist Empty State (No Text) */}
-          {!startDate && (
-             <motion.div key="empty" className="w-full h-px bg-inherit/10" />
+
+          {/* STATE 2: SINGLE DATE CLICKED */}
+          {startDate && !endDate && (
+            <motion.div key="single-edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="flex flex-col border-t border-inherit/10 pt-4 gap-4">
+              
+              {/* Phantom Memory Cards */}
+              {activeOverlappingRanges.map(r => (
+                <div key={r.id} className="flex justify-between items-center bg-black/5 rounded-md p-2 px-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black uppercase text-inherit/80">{r.note}</span>
+                    <span className="text-[10px] font-bold text-inherit/50">{format(new Date(r.start), 'MMM d')} - {format(new Date(r.end), 'MMM d')}</span>
+                  </div>
+                  <button onClick={() => deleteRange(r.id)} className="text-[10px] text-red-500/70 hover:text-red-500 uppercase font-bold tracking-wider transition-colors">Delete</button>
+                </div>
+              ))}
+
+              {/* Day Note Editor */}
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-inherit/40 uppercase tracking-widest mb-2">Note for {format(startDate, 'MMM d, yyyy')}</span>
+                <div className="flex items-center gap-4 w-full mb-1">
+                  <input 
+                    type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} 
+                    className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30"
+                    placeholder="ADD DAILY MEMO..."
+                  />
+                  <div className="flex items-center gap-2">
+                    {singleNotes[format(startDate, 'yyyy-MM-dd')] && (
+                      <button onClick={deleteSingleNote} className="text-[10px] font-bold text-red-500/70 hover:text-red-500 uppercase tracking-wider transition-colors">Delete</button>
+                    )}
+                    <button onClick={handleSaveSingle} className={`text-[10px] font-bold px-4 py-1.5 rounded-sm uppercase tracking-wider transition-colors shadow-sm ${isSaved ? 'bg-green-500 text-white' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
+                      {isSaved ? 'Saved!' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           )}
 
-        </AnimatePresence>
-
-        {/* Clear Button */}
-        <AnimatePresence>
-          {startDate && (
-            <motion.button 
-              initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-              onClick={clearSelection} 
-              className="text-xs font-bold text-inherit/40 hover:text-red-500 uppercase tracking-wider mb-0.5 transition-colors shrink-0"
-            >
-              Clear
-            </motion.button>
+          {/* STATE 3: MONTHLY CANVAS */}
+          {!startDate && !endDate && (
+            <motion.div key="month-edit" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="flex flex-col border-t border-inherit/10 pt-4">
+              <span className="text-[10px] font-bold text-inherit/40 uppercase tracking-widest mb-2">{format(currentDate, 'MMMM')} Canvas</span>
+              <div className="flex items-center gap-4 w-full mb-1">
+                <input 
+                  type="text" value={inputText} onChange={(e) => setInputText(e.target.value)}
+                  className="flex-1 text-xs font-black uppercase tracking-widest text-inherit bg-transparent outline-none border-b border-transparent hover:border-inherit/20 focus:border-inherit/80 pb-1 placeholder-inherit/30 transition-colors"
+                  placeholder="WRITE A NOTE FOR THIS MONTH..."
+                />
+                <div className="flex items-center gap-2">
+                  {monthNotes[format(currentDate, 'yyyy-MM')] && (
+                    <button onClick={deleteMonthNote} className="text-[10px] font-bold text-red-500/70 hover:text-red-500 uppercase tracking-wider transition-colors">Delete</button>
+                  )}
+                  <button onClick={handleSaveMonth} className={`text-[10px] font-bold px-3 py-1 rounded-sm uppercase tracking-wider transition-all border ${isSaved ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-inherit/5 text-inherit hover:bg-inherit/10 border-transparent'}`}>
+                    {isSaved ? 'Saved!' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           )}
+
         </AnimatePresence>
       </div>
     </div>

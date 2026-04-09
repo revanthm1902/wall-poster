@@ -38,10 +38,20 @@ export default function WallCalendar() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 1. GLOBAL ESCAPE HANDLER
+      if (e.key === 'Escape') {
+        setIsSettingsOpen(false);
+        setIsTimeWarpOpen(false);
+        // (Note: The CalendarGrid component handles its own Escape key to clear dates)
+        return;
+      }
+      
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
       if (e.key === 'ArrowRight') nextMonth();
       if (e.key === 'ArrowLeft') prevMonth();
     };
+    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
@@ -100,6 +110,12 @@ export default function WallCalendar() {
 
   return (
     <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
+      {/* ZERO-LATENCY PRELOADER */}
+      <div className="hidden" aria-hidden="true">
+        {monthImages.map((imgSrc) => (
+          <img key={imgSrc} src={imgSrc} alt="preload" />
+        ))}
+      </div>
       
       <style dangerouslySetInnerHTML={{__html: `
         .rope-texture { background-color: #cda47b; background-image: repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px); box-shadow: inset 2px 0 3px rgba(0,0,0,0.6), inset -1px 0 2px rgba(255,255,255,0.3); }
