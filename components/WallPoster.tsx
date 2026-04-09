@@ -8,16 +8,11 @@ import { toPng } from 'html-to-image';
 import CalendarGrid from '@/components/CalendarGrid';
 import { audio } from '@/utils/audio';
 
-// ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 const WAVE_PATH = "M56.44,878.61c-10.79-58-30.13-114.16-41.86-172-16.72-82.39-17.73-168.19-.39-250.45C31,376.22,72,293.33,92.83,214.34c18.48-70.05,26.09-146.53,3-214.34H120V1200H0C32.35,1126.31,45.8,1040.5,54.89,955.67,57.7,929.37,59.34,903.8,56.44,878.61Z";
-
 const WAVE_MASK = `url("data:image/svg+xml,%3Csvg viewBox='0 0 120 1200' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='${WAVE_PATH}' fill='black'/%3E%3C/svg%3E")`;
-
 const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")';
 
-// ─── TYPES ───────────────────────────────────────────────────────────────────
 export interface ThemeStyle {
   bg: string;
   text: string;
@@ -45,7 +40,6 @@ interface WallPosterProps {
   ultraQuality: boolean;
 }
 
-// ─── COMPONENT ───────────────────────────────────────────────────────────────
 const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
   currentDate, direction, activeTheme, fontStyle, heroImage,
   isTimeWarpOpen, onTimeWarpToggle, onDateChange,
@@ -53,7 +47,6 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
 }, ref) => {
   const posterRef = useRef<HTMLDivElement>(null);
 
-  // ─── 3D PARALLAX PHYSICS (NON-NEGOTIABLE — stiffness: 120, damping: 22) ──
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 120, damping: 22 });
@@ -72,7 +65,7 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
     mouseY.set(0);
   }, [mouseX, mouseY]);
 
-  // ─── HTML-TO-IMAGE EXPORT ENGINE ──────────────────────────────────────────
+  // ─── HTML-TO-IMAGE EXPORT ───
   const exportPoster = useCallback(async () => {
     if (!posterRef.current) return;
     onExportStateChange(true);
@@ -100,7 +93,6 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
 
   useImperativeHandle(ref, () => ({ exportPoster }), [exportPoster]);
 
-  // ─── DERIVED VALUES ───────────────────────────────────────────────────────
   const currentMonthIndex = currentDate.getMonth();
   const currentYear = useMemo(() => getYear(currentDate), [currentDate]);
 
@@ -114,7 +106,6 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
       transition={{ type: "spring", stiffness: 38, damping: 16, mass: 1.8, delay: 0.1 }}
       className="relative w-full max-w-6xl h-full max-h-225 flex items-center justify-center cursor-default z-10"
     >
-      {/* ROPE ANCHORS — geometry preserved: left-[30%], left-[70%], h-500 */}
       <div className="absolute bottom-[calc(100%-24px)] left-[30%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-1 z-20" style={{ transform: "translateZ(0)" }} />
       <div className="absolute bottom-[calc(100%-24px)] left-[70%] -translate-x-1/2 w-2 h-500 rope-texture rope-sway-2 z-20" style={{ transform: "translateZ(0)" }} />
 
@@ -137,7 +128,7 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
           <div className="w-3.5 h-3.5 rounded-full rope-texture shadow-[0_3px_5px_rgba(0,0,0,0.8)] rotate-65 translate-y-0.5" />
         </div>
 
-        {/* ─── HERO IMAGE PANEL ──────────────────────────────────────────── */}
+        {/* ─── HERO IMAGE PANEL ──── */}
         <div className="w-full xl:w-5/12 h-[45%] xl:h-full relative group overflow-hidden bg-black z-0 shrink-0">
           <AnimatePresence mode="popLayout">
             <motion.img
@@ -172,7 +163,7 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
             </motion.div>
           </div>
 
-          {/* ─── TIMEWARP OVERLAY ─────────────────────────────────────────── */}
+          {/* ─── TIMEWARP OVERLAY ──── */}
           <AnimatePresence>
             {isTimeWarpOpen && (
               <motion.div
@@ -222,17 +213,14 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
           </AnimatePresence>
         </div>
 
-        {/* ─── CALENDAR GRID PANEL ───────────────────────────────────────── */}
+        {/* ─── CALENDAR GRID PANEL ──── */}
         <div className={`w-full xl:w-7/12 flex-1 relative flex flex-col p-6 xl:p-12 perspective-1000 z-10 ${activeTheme.bg} ${activeTheme.text}`}>
-          {/* SVG WAVE EDGE — geometry preserved: w-15 xl:w-30, right-full */}
           <div className="absolute top-0 right-full w-15 xl:w-30 h-full hidden xl:block z-0 pointer-events-none">
             <svg viewBox="0 0 120 1200" preserveAspectRatio="none" className={`w-full h-full fill-current ${activeTheme.fill}`}><path d={WAVE_PATH} /></svg>
             <div className="absolute inset-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: NOISE_BG, maskImage: WAVE_MASK, WebkitMaskImage: WAVE_MASK, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }} />
           </div>
-          {/* PAPER NOISE TEXTURE */}
           <div className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply opacity-[0.35]" style={{ backgroundImage: NOISE_BG }} />
 
-          {/* HEADER + NAVIGATION */}
           <div className="flex justify-between items-center mb-4 xl:mb-8 relative z-20">
             <h2 className="text-xl xl:text-3xl font-black uppercase tracking-widest text-inherit/60 pointer-events-none">Wall Poster</h2>
             <div className="flex gap-3 relative z-50">
@@ -245,7 +233,6 @@ const WallPoster = forwardRef<WallPosterHandle, WallPosterProps>(({
             </div>
           </div>
 
-          {/* ANIMATED CALENDAR GRID */}
           <div className="flex-1 relative z-20 w-full min-h-0" style={{ willChange: "transform" }}>
             <AnimatePresence custom={direction} mode="wait">
               <motion.div

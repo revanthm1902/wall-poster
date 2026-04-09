@@ -9,7 +9,6 @@ import PosterStudio, { ThemeType } from '@/components/PosterStudio';
 import MusicPlayer from '@/components/MusicPlayer';
 import { audio } from '@/utils/audio';
 
-// ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const monthImages = [
   "/months/jan.png", "/months/feb.png", "/months/mar.png", "/months/apr.png",
   "/months/may.png", "/months/jun.png", "/months/jul.png", "/months/aug.png",
@@ -18,7 +17,6 @@ const monthImages = [
 
 const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")';
 
-// ─── THEME SYSTEM ────────────────────────────────────────────────────────────
 const THEME_STYLES: Record<ThemeType, ThemeStyle> = {
   zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]', bgColorHex: '#fafafa' },
   sepia: { bg: 'bg-[#f4ecd8]', text: 'text-[#4a3b32]', fill: 'text-[#f4ecd8]', bgColorHex: '#f4ecd8' },
@@ -28,7 +26,6 @@ const THEME_STYLES: Record<ThemeType, ThemeStyle> = {
   lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' },
 };
 
-// ─── AESTHETIC LOADER ────────────────────────────────────────────────────────
 const AestheticLoader = () => {
   const [progress, setProgress] = useState(0);
 
@@ -75,9 +72,7 @@ const AestheticLoader = () => {
   );
 };
 
-// ─── ORCHESTRATOR ────────────────────────────────────────────────────────────
 export default function WallCalendar() {
-  // ─── GLOBAL STATE ─────────────────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [direction, setDirection] = useState(1);
@@ -91,7 +86,6 @@ export default function WallCalendar() {
 
   const wallPosterRef = useRef<WallPosterHandle>(null);
 
-  // ─── LOCALSTORAGE PERSISTENCE (MEMORY ENGINE — DO NOT TOUCH) ──────────────
   useEffect(() => {
     const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
     if (savedCustomImage) setCustomImage(savedCustomImage);
@@ -109,7 +103,6 @@ export default function WallCalendar() {
     }
   }, [customImage]);
 
-  // ─── ASSET PRELOADER (no artificial delay — loads as fast as network allows)
   useEffect(() => {
     const loadAssets = async () => {
       const allImagesToPreload = customImage ? [...monthImages, customImage] : monthImages;
@@ -137,7 +130,6 @@ export default function WallCalendar() {
     loadAssets().then(() => setIsLoading(false));
   }, [customImage]);
 
-  // ─── NAVIGATION ───────────────────────────────────────────────────────────
   const nextMonth = useCallback(() => {
     audio.playPaperFlip();
     setDirection(1);
@@ -150,7 +142,6 @@ export default function WallCalendar() {
     setCurrentDate(prev => subMonths(prev, 1));
   }, []);
 
-  // ─── GLOBAL KEYBOARD NAVIGATION ──────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -166,7 +157,6 @@ export default function WallCalendar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nextMonth, prevMonth]);
 
-  // ─── DERIVED STATE ────────────────────────────────────────────────────────
   const activeTheme = useMemo(() => THEME_STYLES[theme], [theme]);
 
   const heroImage = useMemo(
@@ -178,7 +168,6 @@ export default function WallCalendar() {
     wallPosterRef.current?.exportPoster();
   }, []);
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <>
       <AnimatePresence mode="wait">
@@ -187,7 +176,7 @@ export default function WallCalendar() {
 
       <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
 
-        {/* VIDEO BACKGROUND */}
+        {/* BACKGROUND */}
         <video
           src="/video.mp4"
           autoPlay
@@ -209,14 +198,14 @@ export default function WallCalendar() {
           <Settings2 className="w-6 h-6" />
         </motion.button>
 
-        {/* POSTER STUDIO PANEL */}
+        {/* POSTER STUDIO */}
         <PosterStudio
           isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} customImage={customImage} onImageChange={setCustomImage}
           fontStyle={fontStyle} onFontStyleChange={setFontStyle} theme={theme} onThemeChange={setTheme}
           ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
         />
 
-        {/* WALL POSTER — heavy UI component */}
+        {/* WALL POSTER */}
         <AnimatePresence>
           {!isLoading && (
             <WallPoster
