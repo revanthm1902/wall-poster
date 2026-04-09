@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Settings2 } from 'lucide-react';
 import { addMonths, subMonths } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import WallPoster, { WallPosterHandle, ThemeStyle } from '@/components/WallPoster';
+import WallPoster, { WallPosterHandle } from '@/components/WallPoster';
 import PosterStudio, { ThemeType } from '@/components/PosterStudio';
 import MusicPlayer from '@/components/MusicPlayer';
 import { audio } from '@/utils/audio';
@@ -16,6 +16,7 @@ const monthImages = [
 ];
 
 const NOISE_BG = 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")';
+export type ThemeStyle = { bg: string; text: string; fill: string; bgColorHex: string };
 
 const THEME_STYLES: Record<ThemeType, ThemeStyle> = {
   zinc: { bg: 'bg-[#fafafa]', text: 'text-zinc-800', fill: 'text-[#fafafa]', bgColorHex: '#fafafa' },
@@ -26,7 +27,8 @@ const THEME_STYLES: Record<ThemeType, ThemeStyle> = {
   lavender: { bg: 'bg-[#faf5ff]', text: 'text-purple-900', fill: 'text-[#faf5ff]', bgColorHex: '#faf5ff' },
 };
 
-const MIN_LOADER_MS = 600;
+const ACTUAL_MIN_LOADER_MS = 2000; 
+
 const AestheticLoader = ({ progress }: { progress: number }) => {
   return (
     <motion.div
@@ -34,7 +36,7 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, filter: "blur(8px)", scale: 1.04 }}
       transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed inset-0 z-200 flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden"
     >
       <div
         className="absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none"
@@ -49,9 +51,9 @@ const AestheticLoader = ({ progress }: { progress: number }) => {
             Preparing your Wall...
           </h1>
         </motion.div>
-        <div className="w-48 h-0.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="w-48 h-[2px] bg-zinc-800 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-linear-to-r from-zinc-400 to-zinc-200 rounded-full"
+            className="h-full bg-gradient-to-r from-zinc-400 to-zinc-200 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4, ease: "easeOut" }}
@@ -82,7 +84,6 @@ export default function WallCalendar() {
   const [fontStyle, setFontStyle] = useState<'font-sans' | 'font-serif' | 'font-mono'>('font-sans');
   const [theme, setTheme] = useState<ThemeType>('zinc');
   const [ultraQuality, setUltraQuality] = useState(false);
-
   const wallPosterRef = useRef<WallPosterHandle>(null);
   const initialLoadDone = useRef(false);
 
@@ -106,19 +107,14 @@ export default function WallCalendar() {
   useEffect(() => {
     if (initialLoadDone.current) return;
     initialLoadDone.current = true;
-
     const loadStart = performance.now();
 
     const loadAssets = async () => {
       const savedCustomImage = localStorage.getItem('wall_cal_custom_image');
       const currentMonthIndex = new Date().getMonth();
       const currentMonthImage = monthImages[currentMonthIndex];
-      
-      const priorityImages = savedCustomImage 
-        ? [savedCustomImage]
-        : [currentMonthImage];
-
-      const totalAssets = priorityImages.length + 2;
+      const priorityImages = savedCustomImage ? [savedCustomImage] : [currentMonthImage];
+      const totalAssets = priorityImages.length + 2; // +1 Video, +1 Audio
       let loadedCount = 0;
 
       const updateProgress = () => {
@@ -130,7 +126,6 @@ export default function WallCalendar() {
         new Promise<void>(resolve => {
           const img = new window.Image();
           img.src = src;
-
           img.onload = () => { updateProgress(); resolve(); };
           img.onerror = () => { updateProgress(); resolve(); };
         })
@@ -140,8 +135,15 @@ export default function WallCalendar() {
         const vid = document.createElement('video');
         vid.preload = 'auto';
         vid.src = "/video.mp4";
+        vid.muted = true;
+        vid.playsInline = true;
+
         vid.oncanplaythrough = () => { updateProgress(); resolve(); };
-        vid.onerror = () => { updateProgress(); resolve(); };
+        vid.onerror = () => { 
+          console.warn("Video preload blocked or failed.");
+          updateProgress(); 
+          resolve(); 
+        };
         vid.load();
       });
 
@@ -150,7 +152,11 @@ export default function WallCalendar() {
         aud.preload = 'auto';
         aud.src = "/song.mp3";
         aud.oncanplaythrough = () => { updateProgress(); resolve(); };
-        aud.onerror = () => { updateProgress(); resolve(); };
+        aud.onerror = () => { 
+          console.warn("Audio preload blocked or failed.");
+          updateProgress(); 
+          resolve(); 
+        };
         aud.load();
       });
 
@@ -170,7 +176,7 @@ export default function WallCalendar() {
 
     loadAssets().then(() => {
       const elapsed = performance.now() - loadStart;
-      const remaining = Math.max(0, MIN_LOADER_MS - elapsed);
+      const remaining = Math.max(0, ACTUAL_MIN_LOADER_MS - elapsed);
       setTimeout(() => setIsLoading(false), remaining);
     });
   }, []);
@@ -187,6 +193,7 @@ export default function WallCalendar() {
     setCurrentDate(prev => subMonths(prev, 1));
   }, []);
 
+  // GLOBAL KEYBOARD SHORTCUTS
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -203,7 +210,6 @@ export default function WallCalendar() {
   }, [nextMonth, prevMonth]);
 
   const activeTheme = useMemo(() => THEME_STYLES[theme], [theme]);
-
   const heroImage = useMemo(
     () => customImage || monthImages[currentDate.getMonth()],
     [customImage, currentDate]
@@ -218,7 +224,6 @@ export default function WallCalendar() {
       <AnimatePresence mode="wait">
         {isLoading && <AestheticLoader progress={loadProgress} />}
       </AnimatePresence>
-
       <main className="w-screen h-screen overflow-hidden bg-black flex items-center justify-center p-4 md:p-8 font-sans relative perspective-[2000px]">
         <video
           src="/video.mp4"
@@ -254,7 +259,7 @@ export default function WallCalendar() {
                 ultraQuality={ultraQuality} onUltraQualityChange={setUltraQuality} isExporting={isExporting} onExport={handleExport}
               />
 
-              {/* WALL POSTER — drops from top */}
+              {/* THE WALL POSTER */}
               <WallPoster
                 ref={wallPosterRef}
                 currentDate={currentDate}
